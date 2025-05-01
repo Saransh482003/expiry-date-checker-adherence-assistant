@@ -1,0 +1,11 @@
+med_id,med_name,recommended_dosage,side_effects
+MEDA0001,Paracetamol,500mg every 6 hours,"Nausea, rash"
+MEDA0002,Ibuprofen,400mg every 8 hours,"Stomach pain, dizziness"
+MEDA0003,Amoxicillin,250mg three times daily,"Diarrhea, allergic reactions"
+MEDA0004,Cetirizine,10mg once daily,"Drowsiness, dry mouth"
+MEDA0005,Metformin,500mg twice daily,"Nausea, bloating"
+MEDA0006,Atorvastatin,10mg once daily,"Muscle pain, headache"
+MEDA0007,Omeprazole,20mg once daily,"Constipation, gas"
+MEDA0008,Lisinopril,10mg once daily,"Cough, dizziness"
+MEDA0009,Levothyroxine,50mcg once daily,"Palpitations, weight loss"
+MEDA0010,Aspirin,75mg once daily,"Bleeding, stomach ulcers"

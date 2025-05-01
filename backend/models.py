@@ -24,3 +24,4 @@ class Prescriptions(db.Model):
     pres_id = db.Column(db.String, primary_key=True)
     med_id = db.Column(db.String, nullable=False)
     user_id = db.Column(db.String, nullable=False)
+    frequency = db.Column(db.Integer, nullable=False)
