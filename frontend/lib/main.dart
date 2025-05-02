@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'services/notification_service.dart';
-import 'services/socket_service.dart';
+import 'package:lottie/lottie.dart';
+// import 'services/notification_service.dart';
+// import 'services/socket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  final notificationService = NotificationService();
-  await notificationService.initNotification();
+  // final notificationService = NotificationService();
+  // await notificationService.initNotification();
   
-  final socketService = SocketService();
-  socketService.initSocket();
+  // final socketService = SocketService();
+  // socketService.initSocket();
   
   runApp(const MyApp());
 }
@@ -186,7 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate() && _dob != null) {
-                    final url = Uri.parse('http://10.42.243.81:8000/add-user');
+                    final url = Uri.parse('http://10.44.49.70:8000/add-user');
                     final response = await http.post(
                       url,
                       headers: {'Content-Type': 'application/json'},
@@ -199,9 +200,54 @@ class _MyHomePageState extends State<MyHomePage> {
                         'dob': _dob?.toIso8601String(),
                       }),
                     );
-                    if (response.statusCode == 200) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Form submitted successfully!')),
+                    if (response.statusCode == 200 || response.statusCode == 400) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/success.gif', // Path to your GIF
+                                  width: 150,
+                                  height: 150,
+                                  fit: BoxFit.cover,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'User Registered Successfully!',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              Center(
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: Color(0xFFEB4034),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text('OK'),
+                                  
+                                )
+                              ),
+                            ],
+                          );
+                        },
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
