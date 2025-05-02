@@ -2,33 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart';
-// import 'services/notification_service.dart';
-// import 'services/socket_service.dart';
+import 'dashboard_screen.dart';
+import 'signin.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // final notificationService = NotificationService();
-  // await notificationService.initNotification();
-  
-  // final socketService = SocketService();
-  // socketService.initSocket();
-  
+void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Jeevaniya',
+      title: 'Medicine Adherence Assistant',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primaryColor: const Color(0xFFEB4034),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEB4034)),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Jeevaniya: A Medical Assistant'),
+      home: const SignInScreen(),
     );
   }
 }
@@ -187,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate() && _dob != null) {
-                    final url = Uri.parse('http://10.44.49.70:8000/add-user');
+                    final url = Uri.parse('http://10.42.243.81:8000/add-user');
                     final response = await http.post(
                       url,
                       headers: {'Content-Type': 'application/json'},
@@ -200,7 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         'dob': _dob?.toIso8601String(),
                       }),
                     );
-                    if (response.statusCode == 200 || response.statusCode == 400) {
+                    if (response.statusCode == 200) {
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -249,6 +242,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           );
                         },
                       );
+                      await Future.delayed(const Duration(seconds: 1));
+                      Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                    );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Submission failed: ${response.body}')),

@@ -17,6 +17,7 @@ import smtplib
 import ssl
 import json
 from flask_socketio import SocketIO
+import pytz
 
 with open("authorization.json") as f:
     auth = json.loads(f.read())
@@ -189,6 +190,32 @@ def send_whatsapp_message(self):
 @app.route("/")
 def index():
     return "Hello World!"
+
+@app.route("/login", methods=["POST"])
+def login():
+    form = request.get_json()
+    print(form)
+    fetchUser = Users.query.filter_by(user_name=form["username"], password=form["password"]).first()
+    print(fetchUser)
+    if fetchUser:
+        fetchUser.last_loged = datetime.now(pytz.utc)
+        db.session.commit()
+
+        return {
+            "user_id": fetchUser.user_id,
+            "user_name": fetchUser.user_name,
+            "email": fetchUser.email,
+            "ph_no": fetchUser.ph_no,
+            "gender": fetchUser.gender,
+            "dob": fetchUser.dob,
+            "last_loged": fetchUser.last_loged,
+            "success": True
+        }, 200
+    else:
+        return {
+            "success": False,
+            "message": "Invalid credentials"
+        }, 401
 
 @app.route("/add-user", methods=["POST"])
 def register():
