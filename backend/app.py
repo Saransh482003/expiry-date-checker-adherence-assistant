@@ -37,28 +37,31 @@ app.config["CELERY"] = {
     "task_ignore_result": True,
     "beat_schedule": {
         "send-whatsapp-message-at-00-00-am": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=11, minute=15),  # 00:00 AM IST = 18:30 UTC
+            "task": "app.send_whatsapp_message",
+            # 00:00 AM IST = 18:30 UTC
+            "schedule": crontab(hour=11, minute=15),
         },
         "send-whatsapp-message-at-4-00-am": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=22, minute=30),  # 4:00 AM IST = 22:30 UTC
+            "task": "app.send_whatsapp_message",
+            "schedule": crontab(hour=22, minute=30),  # 4:00 AM IST = 22:30 UTC
         },
         "send-whatsapp-message-at-8-00-am": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=2, minute=30),  # 8:00 AM IST = 2:30 UTC
+            "task": "app.send_whatsapp_message",
+            "schedule": crontab(hour=2, minute=30),  # 8:00 AM IST = 2:30 UTC
         },
         "send-whatsapp-message-at-12-00-pm": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=6, minute=30),  # 12:00 PM IST = 6:30 UTC
+            "task": "app.send_whatsapp_message",
+            "schedule": crontab(hour=6, minute=30),  # 12:00 PM IST = 6:30 UTC
         },
         "send-whatsapp-message-at-16-00-pm": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=10, minute=30),  # 16:00 AM IST = 10:30 UTC
+            "task": "app.send_whatsapp_message",
+            # 16:00 AM IST = 10:30 UTC
+            "schedule": crontab(hour=10, minute=30),
         },
         "send-whatsapp-message-at-20-00-pm": {
-        "task": "app.send_whatsapp_message",
-        "schedule": crontab(hour=17, minute=44),  # 20:00 AM IST = 14:30 UTC
+            "task": "app.send_whatsapp_message",
+            # 20:00 AM IST = 14:30 UTC
+            "schedule": crontab(hour=17, minute=44),
         },
         # "send-email-message-at-00-00-am": {
         # "task": "app.send_email_message",
@@ -84,7 +87,7 @@ app.config["CELERY"] = {
         # "task": "app.send_email_message",
         # "schedule": crontab(hour=17, minute=45),  # 20:00 AM IST = 14:30 UTC
         # },
-        
+
     },
 }
 
@@ -101,6 +104,7 @@ cache = Cache(app, config={
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+
 def nextID(id):
     prefix = id[:3]
     alpha = id[3]
@@ -109,7 +113,7 @@ def nextID(id):
         return f"{prefix}{chr(ord(alpha)+1)}0001"
     else:
         return f"{prefix}{alpha}{'0'*(4-len(str(int(num))))}{int(num)+1}"
-      
+
 
 @shared_task(bind=True, base=AbortableTask, ignore_result=False)
 def send_email_message(self):
@@ -124,13 +128,13 @@ def send_email_message(self):
             "email": Users.query.filter_by(user_id=row.user_id).first().email,
             "medicine_name": Medicines.query.filter_by(med_id=row.med_id).first().med_name
         } for row in fetchData])
-        data = data.iloc[-2:,:]
+        data = data.iloc[-2:, :]
         email_sender = auth["email-address"]
         email_password = auth["email-password"]
         subject = 'Medication Daily Reminder'
         for index, row in data.iterrows():
             try:
-                
+
                 body = f"""
                     Dear {row['name']},
 
@@ -149,7 +153,7 @@ def send_email_message(self):
                 em['To'] = row["email"]
                 em['Subject'] = subject
                 em.set_content(body, charset='utf-8')
-                
+
                 context = ssl.create_default_context()
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
                     smtp.login(email_sender, email_password)
@@ -173,7 +177,7 @@ def send_whatsapp_message(self):
             "medicine_name": Medicines.query.filter_by(med_id=row.med_id).first().med_name
         } for row in fetchData])
         print(data)
-        data = data.iloc[-2:,:]
+        data = data.iloc[-2:, :]
         print(data)
         # for index, row in data.iterrows():
         #     try:
@@ -191,12 +195,12 @@ def send_whatsapp_message(self):
 def index():
     return "Hello World!"
 
+
 @app.route("/login", methods=["POST"])
 def login():
     form = request.get_json()
-    print(form)
-    fetchUser = Users.query.filter_by(user_name=form["username"], password=form["password"]).first()
-    print(fetchUser)
+    fetchUser = Users.query.filter_by(
+        user_name=form["username"], password=form["password"]).first()
     if fetchUser:
         fetchUser.last_loged = datetime.now(pytz.utc)
         db.session.commit()
@@ -217,6 +221,7 @@ def login():
             "message": "Invalid credentials"
         }, 401
 
+
 @app.route("/add-user", methods=["POST"])
 def register():
     form = request.get_json()
@@ -225,14 +230,14 @@ def register():
         fetchUsers = Users.query.order_by(desc(Users.user_id)).first()
         next_id = nextID(fetchUsers.user_id) if fetchUsers else "USRA0001"
         now = datetime.now()
-        
+
         dob_str = form["dob"]
         try:
             dob = datetime.fromisoformat(dob_str)
         except ValueError:
             # fallback if milliseconds are present (Python <3.11)
             dob = datetime.strptime(dob_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
-        try: 
+        try:
             addUser = Users(
                 user_id=next_id,
                 user_name=form["name"],
@@ -251,14 +256,52 @@ def register():
             return "Failed to add user", 500
     return "User already exists", 400
 
+
+@app.route("/get-user-data", methods=["POST"])
+def getUserData():
+    form = request.get_json()
+    fetchUser = Users.query.filter_by(
+        user_name=form["username"], password=form["password"]).first()
+    fetchPrescriptions = Prescriptions.query.filter_by(
+        user_id=fetchUser.user_id).all()
+    medicine_ids = [p.med_id for p in fetchPrescriptions]
+    fetchMedicines = Medicines.query.filter(
+        Medicines.med_id.in_(medicine_ids)).all()
+    if fetchUser:
+        return {
+            "user_id": fetchUser.user_id,
+            "user_name": fetchUser.user_name,
+            "email": fetchUser.email,
+            "phone": fetchUser.ph_no,
+            "gender": fetchUser.gender,
+            "dob": fetchUser.dob.strftime("%A, %d %B %Y"),
+            "last_loged": fetchUser.last_loged.strftime("%A, %d %B %Y"),
+            "prescriptions": [{
+                "pres_id": p.pres_id,
+                "med_id": p.med_id,
+                "medicine_name": m.med_name,
+                "recommended_dosage": m.recommended_dosage,
+                "side_effects": m.side_effects,
+                "frequency": p.frequency
+            } for p, m in zip(fetchPrescriptions, fetchMedicines)],
+        }, 200
+    else:
+        return {
+            "success": False,
+            "message": "Server Error"
+        }, 500
+
+
 @app.route("/add_prescription", methods=["POST"])
 def addPrescription():
     form = request.get_json()
-    fetchUser = Users.query.filter_by(user_name=form["user_name"], password=form["password"]).first()
+    fetchUser = Users.query.filter_by(
+        user_name=form["user_name"], password=form["password"]).first()
     if fetchUser:
         user_id = fetchUser.user_id
         fetchMed = Medicines.query.filter_by(med_name=form["med_name"]).first()
-        lastID = Prescriptions.query.order_by(Prescriptions.book_id.desc()).first().book_id
+        lastID = Prescriptions.query.order_by(
+            Prescriptions.book_id.desc()).first().book_id
         addPres = Prescriptions(
             pres_id=nextID(lastID),
             med_id=fetchMed.med_id,
@@ -275,6 +318,7 @@ def delete_content():
     num_rows_deleted = db.session.query(globals()[table]).delete()
     db.session.commit()
     return f"Deleted {num_rows_deleted} rows from the {table} table."
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)

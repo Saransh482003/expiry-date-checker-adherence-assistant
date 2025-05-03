@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart';
 import 'dashboard_screen.dart';
-import 'signin.dart';
+import 'signup.dart';
+import 'package:frontend/constants.dart';
+import 'theme_constants.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -17,17 +20,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Medicine Adherence Assistant',
       theme: ThemeData(
-        primaryColor: const Color(0xFFEB4034),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFEB4034)),
+        primaryColor: ThemeConstants.primaryColor,
+        colorScheme: ColorScheme.fromSeed(seedColor: ThemeConstants.primaryColor),
         useMaterial3: true,
       ),
-      home: const SignInScreen(),
+      routes: {
+        '/signup': (context) => SignUpScreen(),
+        '/main': (context) => MyHomePage (),
+        // add other routes here
+      },
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, this.title = 'Medicine Adherence Assistant'});
 
   final String title;
 
@@ -36,229 +44,178 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  String? _gender;
-  DateTime? _dob;
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text('Registration Form'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                // obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your password';
-                  if (value.length < 8) return 'Password must be at least 8 characters';
-                  final hasUpper = value.contains(RegExp(r'[A-Z]'));
-                  final hasLower = value.contains(RegExp(r'[a-z]'));
-                  final hasDigit = value.contains(RegExp(r'[0-9]'));
-                  final hasSpecial = value.contains(RegExp(r'[!@#\$&*~]'));
-                  if (!hasUpper) return 'Password must contain an uppercase letter';
-                  if (!hasLower) return 'Password must contain a lowercase letter';
-                  if (!hasDigit) return 'Password must contain a digit';
-                  if (!hasSpecial) return 'Password must contain a special character (!@#\$&*~)';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Please enter your email';
-                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                  if (!emailRegex.hasMatch(value)) return 'Enter a valid email';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) => value == null || value.isEmpty ? 'Please enter your phone number' : null,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _gender,
-                decoration: InputDecoration(
-                  labelText: 'Gender',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.wc),
-                ),
-                items: ['Male', 'Female', 'Other']
-                    .map((gender) => DropdownMenuItem(
-                          value: gender,
-                          child: Text(gender),
-                        ))
-                    .toList(),
-                onChanged: (value) => setState(() => _gender = value),
-                validator: (value) => value == null ? 'Please select your gender' : null,
-              ),
-              const SizedBox(height: 16),
-              InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Date of Birth',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.cake),
-                ),
-                child: InkWell(
-                  onTap: () async {
-                    final now = DateTime.now();
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: now.subtract(const Duration(days: 365 * 10)),
-                      firstDate: DateTime(1900),
-                      lastDate: now,
-                    );
-                    if (picked != null) setState(() => _dob = picked);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12.0),
-                    child: Text(
-                      _dob == null ? 'Select your date of birth' : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
-                      style: TextStyle(
-                        color: _dob == null ? Colors.grey[600] : Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 48),
+                // Logo placeholder
+                Container(
+                  height: 120,
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.medication,
+                    size: 60,
+                    color: ThemeConstants.primaryColor,
                   ),
                 ),
-              ),
-              if (_dob == null)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0, left: 12.0),
-                  child: Text('Please select your date of birth', style: TextStyle(color: Colors.red, fontSize: 12)),
+                const SizedBox(height: 48),
+                // Welcome Text
+                const Text(
+                  'Welcome Back',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(fontSize: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                onPressed: () async {
-                  if (_formKey.currentState!.validate() && _dob != null) {
-                    final url = Uri.parse('http://10.42.243.81:8000/add-user');
-                    final response = await http.post(
-                      url,
-                      headers: {'Content-Type': 'application/json'},
-                      body: jsonEncode({
-                        'name': _nameController.text,
-                        'password': _passwordController.text,
-                        'email': _emailController.text,
-                        'phone': _phoneController.text,
-                        'gender': _gender,
-                        'dob': _dob?.toIso8601String(),
-                      }),
-                    );
-                    if (response.statusCode == 200) {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  'assets/success.gif', // Path to your GIF
-                                  width: 150,
-                                  height: 150,
-                                  fit: BoxFit.cover,
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'User Registered Successfully!',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              Center(
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Color(0xFFEB4034),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text('OK'),
-                                  
-                                )
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      await Future.delayed(const Duration(seconds: 1));
-                      Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-                    );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Submission failed: ${response.body}')),
-                      );
+                const SizedBox(height: 24),
+                // Username field
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your username';
                     }
-                  }
-                },
-                child: const Text('Submit'),
-              ),
-            ],
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Password field
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                // Sign In button
+                ElevatedButton(
+                  onPressed: _handleSignIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ThemeConstants.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Sign Up text
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account?"),
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to sign up screen
+                        Navigator.pushNamed(context, '/signup');
+                      },
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: ThemeConstants.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleSignIn() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final response = await http.post(
+          Uri.parse('$baseUrl/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'username': _usernameController.text,
+            'password': _passwordController.text,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final userData = jsonDecode(response.body);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardScreen(
+              username: userData["username"] ?? _usernameController.text,
+              password: userData["password"] ?? _passwordController.text,
+            )),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid username or password')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Connection error')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
