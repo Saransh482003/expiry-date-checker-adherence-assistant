@@ -16,11 +16,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();  final TextEditingController _passwordController = TextEditingController();
   String? _gender;
   DateTime? _dob;
   bool _isPasswordVisible = false;
+  bool _showPasswordHints = false;
 
   @override
   Widget build(BuildContext context) {
@@ -93,21 +93,58 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter your password';
-                    if (value.length < 8) return 'Password must be at least 8 characters';
+                  ),                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      setState(() => _showPasswordHints = true);
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 8) {
+                      setState(() => _showPasswordHints = true);
+                      return 'Password must be at least 8 characters';
+                    }
                     final hasUpper = value.contains(RegExp(r'[A-Z]'));
                     final hasLower = value.contains(RegExp(r'[a-z]'));
                     final hasDigit = value.contains(RegExp(r'[0-9]'));
                     final hasSpecial = value.contains(RegExp(r'[!@#\$&*~]'));
-                    if (!hasUpper) return 'Password must contain an uppercase letter';
-                    if (!hasLower) return 'Password must contain a lowercase letter';
-                    if (!hasDigit) return 'Password must contain a digit';
-                    if (!hasSpecial) return 'Password must contain a special character (!@#\$&*~)';
+                    if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+                      setState(() => _showPasswordHints = true);
+                      if (!hasUpper) return 'Password must contain an uppercase letter';
+                      if (!hasLower) return 'Password must contain a lowercase letter';
+                      if (!hasDigit) return 'Password must contain a digit';
+                      if (!hasSpecial) return 'Password must contain a special character (!@#\$&*~)';
+                    }
                     return null;
                   },
                 ),
+                // Password requirements hint - only show after first validation failure
+                if (_showPasswordHints) 
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, left: 12.0, bottom: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Password must contain:',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '• At least 8 characters\n'
+                          '• One uppercase letter (A-Z)\n'
+                          '• One lowercase letter (a-z)\n'
+                          '• One number (0-9)\n'
+                          '• One special character (!@#\$&*~)',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 // Email field
                 TextFormField(
