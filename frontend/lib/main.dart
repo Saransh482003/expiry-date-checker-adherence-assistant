@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/noti_serve.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:lottie/lottie.dart';
@@ -7,10 +8,13 @@ import 'signup.dart';
 import 'package:frontend/constants.dart';
 import 'theme_constants.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/services/noti_serve.dart';
 
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  NotiService().initNotification();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     // DeviceOrientation.portraitDown,

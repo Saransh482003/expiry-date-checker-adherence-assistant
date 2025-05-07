@@ -1,5 +1,6 @@
 // filepath: e:\expiry-date-checker-adherence-assistant\frontend\lib\success_screen.dart
 import 'package:flutter/material.dart';
+import 'package:frontend/services/noti_serve.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'theme_constants.dart';
@@ -306,6 +307,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
+            
     );
   }
 
@@ -433,6 +435,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: Icons.warning_amber_rounded,
               title: 'Side Effects',
               value: sideEffects,
+            ),
+            const SizedBox(height: 16),
+            // New Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  NotiService().showNotification(
+                    id: 0,
+                    title: 'Daily Medicine Reminder',
+                    body: 'Time to take your medicine',
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  backgroundColor: ThemeConstants.primaryColor,
+                ),
+                child: const Text(
+                  'Set Reminder',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
