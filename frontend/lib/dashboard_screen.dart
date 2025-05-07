@@ -439,16 +439,282 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 16),
             // New Button
             SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  NotiService().scheduleNotification(
-                    id: 0,
-                    title: 'Daily Medicine Reminder',
-                    body: 'Time to take your medicine',
-                    hour: 3,
-                    minute: 41,
-                  );
+              width: double.infinity,              child: ElevatedButton(
+                onPressed: () async {                  TimeOfDay? selectedTime = await showDialog<TimeOfDay>(
+  context: context,
+  builder: (BuildContext context) {
+    int selectedHour = 14;  // Default to 2
+    bool isPM = true;      // Default to PM
+    int selectedMinute = 0;
+    
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Set Reminder Time',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: ThemeConstants.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(                    decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: ThemeConstants.primaryColor.withOpacity(0.05),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Hour',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 150,
+                            width: 80,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 50,
+                              perspective: 0.005,
+                              diameterRatio: 1.2,
+                              physics: const FixedExtentScrollPhysics(),
+                              useMagnifier: true,
+                              magnification: 1.3,
+                              onSelectedItemChanged: (index) {
+                                setState(() {
+                                  selectedHour = index + 1;
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: 12,
+                                builder: (context, index) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: selectedHour == index + 1 
+                                          ? ThemeConstants.primaryColor.withOpacity(0.1)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: 16,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${index + 1}'.padLeft(2, '0'),
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: selectedHour == index + 1 
+                                              ? FontWeight.bold 
+                                              : FontWeight.normal,
+                                          color: selectedHour == index + 1
+                                              ? ThemeConstants.primaryColor
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        height: 100,
+                        width: 1,
+                        color: Colors.grey[300],
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Minute',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 150,
+                            width: 80,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 50,
+                              perspective: 0.005,
+                              diameterRatio: 1.2,
+                              physics: const FixedExtentScrollPhysics(),
+                              useMagnifier: true,
+                              magnification: 1.3,
+                              onSelectedItemChanged: (index) {
+                                setState(() {
+                                  selectedMinute = index * 5;
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: 12,
+                                builder: (context, index) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: selectedMinute == index * 5 
+                                          ? ThemeConstants.primaryColor.withOpacity(0.1)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: 16,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${index * 5}'.padLeft(2, '0'),
+                                        style: TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: selectedMinute == index * 5 
+                                              ? FontWeight.bold 
+                                              : FontWeight.normal,
+                                          color: selectedMinute == index * 5
+                                              ? ThemeConstants.primaryColor
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildPeriodButton(
+                        label: 'AM',
+                        isSelected: !isPM,
+                        onTap: () => setState(() => isPM = false),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildPeriodButton(
+                        label: 'PM',
+                        isSelected: isPM,
+                        onTap: () => setState(() => isPM = true),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        final hour = isPM ? 
+                          (selectedHour == 12 ? 12 : selectedHour + 12) : 
+                          (selectedHour == 12 ? 0 : selectedHour);
+                        Navigator.pop(
+                          context,
+                          TimeOfDay(hour: hour, minute: selectedMinute),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ThemeConstants.primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Set Time',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  },
+);
+
+                  if (selectedTime != null && mounted) {
+                    await NotiService().scheduleNotification(
+                      id: 0,
+                      title: 'Daily Medicine Reminder',
+                      body: 'Time to take $medicineName',
+                      hour: selectedTime.hour,
+                      minute: selectedTime.minute,
+                    );
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Reminder set for ${selectedTime.format(context)}',
+                        ),
+                        backgroundColor: ThemeConstants.primaryColor,
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -537,6 +803,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPeriodButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected ? ThemeConstants.primaryColor : Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : ThemeConstants.primaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeDivider() {
+    return Container(
+      height: 100,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 2,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: ThemeConstants.primaryColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
