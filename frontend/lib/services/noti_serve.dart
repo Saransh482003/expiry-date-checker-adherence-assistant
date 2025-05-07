@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -8,6 +9,12 @@ class NotiService {
 
   Future<void> initNotification() async {
     if (_isInitialized) return;
+
+    // Request notification permission
+    final status = await Permission.notification.request();
+    if (status.isDenied) {
+      return;
+    }
 
     const initSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettingsIOS = DarwinInitializationSettings(
@@ -41,12 +48,13 @@ class NotiService {
   }
 
 
+  // Use the notificationDetails in showNotification
   Future<void> showNotification({int id = 0, String? title, String? body}) async {
     return notificationsPlugin.show(
       id,
       title,
       body,
-      const NotificationDetails()
+      notificationDetails()  // Use the configured details instead of empty one
     );
   }
 }

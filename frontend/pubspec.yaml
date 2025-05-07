@@ -39,7 +39,7 @@ dependencies:
   lottie: ^2.7.0
   firebase_messaging: ^14.0.0
   flutter_local_notifications: ^19.1.0
-  permission_handler: ^12.0.0+1
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
