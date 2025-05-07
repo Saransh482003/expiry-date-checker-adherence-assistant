@@ -442,10 +442,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  NotiService().showNotification(
+                  NotiService().scheduleNotification(
                     id: 0,
                     title: 'Daily Medicine Reminder',
                     body: 'Time to take your medicine',
+                    hour: 3,
+                    minute: 41,
                   );
                 },
                 style: ElevatedButton.styleFrom(
