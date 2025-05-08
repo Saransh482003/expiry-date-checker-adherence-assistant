@@ -23,11 +23,174 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? userData;
   bool isLoading = true;
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _medicineNameController = TextEditingController();
+  final TextEditingController _dosageController = TextEditingController();
+  final TextEditingController _sideEffectsController = TextEditingController();
+  final TextEditingController _frequencyController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _medicineNameController.dispose();
+    _dosageController.dispose();
+    _sideEffectsController.dispose();
+    _frequencyController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _showAddPrescriptionDialog();
+    }
+  }
+
+  void _showAddPrescriptionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Add New Prescription',
+            style: TextStyle(
+              color: ThemeConstants.primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _medicineNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Medicine Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: _dosageController,
+                  decoration: InputDecoration(
+                    labelText: 'Recommended Dosage',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: _sideEffectsController,
+                  decoration: InputDecoration(
+                    labelText: 'Side Effects',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: _frequencyController,
+                  decoration: InputDecoration(
+                    labelText: 'Frequency (times per day)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _addPrescription();
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ThemeConstants.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Add',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _addPrescription() async {
+    if (_medicineNameController.text.isEmpty ||
+        _dosageController.text.isEmpty ||
+        _sideEffectsController.text.isEmpty ||
+        _frequencyController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/add-prescription'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': widget.username,
+          'password': widget.password,
+          'medicine_name': _medicineNameController.text,
+          'recommended_dosage': _dosageController.text,
+          'side_effects': _sideEffectsController.text,
+          'frequency': int.parse(_frequencyController.text),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _medicineNameController.clear();
+        _dosageController.clear();
+        _sideEffectsController.clear();
+        _frequencyController.clear();
+        _fetchUserData(); // Refresh the prescription list
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Prescription added successfully'),
+            backgroundColor: ThemeConstants.primaryColor,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add prescription: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding prescription: $e')),
+      );
+    }
   }
 
   Future<void> _fetchUserData() async {
@@ -89,6 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+              controller: _scrollController,
               child: Column(
                 children: [
                   // Enhanced Profile Section
