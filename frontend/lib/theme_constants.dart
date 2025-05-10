@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ThemeConstants {
-  static const Color primaryColor = Color(0xFFb8001f);
+  static const Color primaryColor = Color(0xFF074f86);
   static const Color secondaryColor = Color(0xFF2196F3);
   
   // You can add more theme-related constants here

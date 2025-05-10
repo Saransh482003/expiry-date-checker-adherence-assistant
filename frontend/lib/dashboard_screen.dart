@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'theme_constants.dart';
 import 'constants.dart';
+import 'add_prescription_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final String username;
@@ -23,23 +24,18 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? userData;
   bool isLoading = true;
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _medicineNameController = TextEditingController();
   final TextEditingController _dosageController = TextEditingController();
   final TextEditingController _sideEffectsController = TextEditingController();
   final TextEditingController _frequencyController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     _fetchUserData();
-    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
     _medicineNameController.dispose();
     _dosageController.dispose();
     _sideEffectsController.dispose();
@@ -47,151 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-      _showAddPrescriptionDialog();
-    }
-  }
 
-  void _showAddPrescriptionDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Add New Prescription',
-            style: TextStyle(
-              color: ThemeConstants.primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _medicineNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Medicine Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  controller: _dosageController,
-                  decoration: InputDecoration(
-                    labelText: 'Recommended Dosage',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  controller: _sideEffectsController,
-                  decoration: InputDecoration(
-                    labelText: 'Side Effects',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  controller: _frequencyController,
-                  decoration: InputDecoration(
-                    labelText: 'Frequency (times per day)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _addPrescription();
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ThemeConstants.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Add',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _addPrescription() async {
-    if (_medicineNameController.text.isEmpty ||
-        _dosageController.text.isEmpty ||
-        _sideEffectsController.text.isEmpty ||
-        _frequencyController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/add-prescription'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'password': widget.password,
-          'medicine_name': _medicineNameController.text,
-          'recommended_dosage': _dosageController.text,
-          'side_effects': _sideEffectsController.text,
-          'frequency': int.parse(_frequencyController.text),
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        _medicineNameController.clear();
-        _dosageController.clear();
-        _sideEffectsController.clear();
-        _frequencyController.clear();
-        _fetchUserData(); // Refresh the prescription list
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Prescription added successfully'),
-            backgroundColor: ThemeConstants.primaryColor,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add prescription: ${response.body}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding prescription: $e')),
-      );
-    }
-  }
 
   Future<void> _fetchUserData() async {
     try {
@@ -248,11 +100,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
         ],
-      ),
-      body: isLoading
+      ),      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              controller: _scrollController,
               child: Column(
                 children: [
                   // Enhanced Profile Section
@@ -264,144 +114,175 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         bottomRight: Radius.circular(40),
                       ),
                     ),
-                    child: Column(
+                    child: Stack(
+                      clipBehavior: Clip.none,
                       children: [
-                        const SizedBox(height: 20),
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Background circle
-                            Container(
-                              width: 140,
-                              height: 140,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.1),
-                              ),
+                        // Decorative circles
+                        Positioned(
+                          right: -30,
+                          top: -20,
+                          child: Container(
+                            width: 250,
+                            height: 250,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
                             ),
-                            // Profile picture container
-                            Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
-                              ),
-                              child: CircleAvatar(
-                                backgroundColor: Colors.white,
-                                child: Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: ThemeConstants.primaryColor,
-                                ),
-                              ),
-                            ),
-                            // Edit button
-                            Positioned(
-                              bottom: 0,
-                              right: MediaQuery.of(context).size.width * 0.28,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: ThemeConstants.primaryColor,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 20,
-                                  color: ThemeConstants.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        // User info with icons
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Column(
-                            children: [
-                              Text(
-                                userData?['name'] ?? widget.username,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.email_outlined,
-                                    color: Colors.white70,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    userData?['email'] ?? 'Loading...',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              // Quick stats
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 15,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                  children: [
-                                    _buildQuickStat(
-                                      'Prescriptions',
-                                      '${(userData?['prescriptions'] as List?)?.length ?? 0}',
-                                      Icons.medication_outlined,
-                                    ),
-                                    _buildQuickStat(
-                                      'Completed',
-                                      '80%',
-                                      Icons.check_circle_outline,
-                                    ),
-                                    _buildQuickStat(
-                                      'Upcoming',
-                                      '3',
-                                      Icons.upcoming_outlined,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                        const SizedBox(height: 30),
+                        Positioned(
+                          left: -50,
+                          bottom: -30,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        // Existing content
+                        Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Background circle
+                                Container(
+                                  width: 140,
+                                  height: 140,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                ),
+                                // Profile picture container
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: ThemeConstants.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                                // Edit button
+                                Positioned(
+                                  bottom: 0,
+                                  right: MediaQuery.of(context).size.width * 0.28,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: ThemeConstants.primaryColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.edit,
+                                      size: 20,
+                                      color: ThemeConstants.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            // User info with icons
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    userData?['name'] ?? widget.username,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.email_outlined,
+                                        color: Colors.white70,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        userData?['email'] ?? 'Loading...',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  // Quick stats
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 15,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 10,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      children: [
+                                        _buildQuickStat(
+                                          'Prescriptions',
+                                          '${(userData?['prescriptions'] as List?)?.length ?? 0}',
+                                          Icons.medication_outlined,
+                                        ),
+                                        _buildQuickStat(
+                                          'Completed',
+                                          '80%',
+                                          Icons.check_circle_outline,
+                                        ),
+                                        _buildQuickStat(
+                                          'Upcoming',
+                                          '3',
+                                          Icons.upcoming_outlined,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -471,7 +352,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
-            
+            floatingActionButton: FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddPrescriptionScreen(
+                      username: widget.username,
+                      password: widget.password,
+                    ),
+                  ),
+                );
+          if (result == true) {
+            _fetchUserData(); // Refresh the prescriptions list
+          }
+        },
+        backgroundColor: ThemeConstants.primaryColor,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Add Prescription',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 
@@ -999,31 +901,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildTimeDivider() {
-    return Container(
-      height: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 2,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: ThemeConstants.primaryColor,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

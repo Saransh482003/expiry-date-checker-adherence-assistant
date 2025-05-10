@@ -292,24 +292,56 @@ def getUserData():
         }, 500
 
 
-@app.route("/add_prescription", methods=["POST"])
-def addPrescription():
+@app.route("/add-medicine", methods=["POST"])
+def addMedicine():
     form = request.get_json()
-    fetchUser = Users.query.filter_by(
-        user_name=form["user_name"], password=form["password"]).first()
-    if fetchUser:
-        user_id = fetchUser.user_id
-        fetchMed = Medicines.query.filter_by(med_name=form["med_name"]).first()
-        lastID = Prescriptions.query.order_by(
-            Prescriptions.book_id.desc()).first().book_id
-        addPres = Prescriptions(
-            pres_id=nextID(lastID),
-            med_id=fetchMed.med_id,
-            user_id=user_id,
-            frequency=form["frequency"]
+    fetchMed = Medicines.query.filter_by(med_name=form["med_name"]).first()
+    if fetchMed == None:
+        fetchMed = Medicines.query.order_by(desc(Medicines.med_id)).first()
+        next_id = nextID(fetchMed.med_id) if fetchMed else "MEDA0001"
+        addMed = Medicines(
+            med_id=next_id,
+            med_name=form["med_name"],
+            recommended_dosage=form["recommended_dosage"],
+            side_effects=form["side_effects"]
         )
-        db.session.add(addPres)
+        db.session.add(addMed)
         db.session.commit()
+        return "Successfully Added", 200
+    return "Medicine already exists", 400
+
+@app.route("/add-prescription", methods=["POST"])
+def addPrescription():
+    form = request.get_json() 
+    fetchUser = Users.query.filter_by(user_id=form["user_id"]).first()
+    fetchMed = Medicines.query.filter_by(med_name=form["med_name"]).first()
+    lastID = Prescriptions.query.order_by(Prescriptions.pres_id.desc()).first()
+    next_id = nextID(lastID.pres_id) if lastID else "PRES0001"
+    if fetchUser:
+        if fetchMed:
+            addPres = Prescriptions(
+                pres_id=next_id,
+                med_id=fetchMed.med_id,
+                user_id=fetchUser.user_id,
+                frequency=form["frequency"]
+            )
+            db.session.add(addPres)
+            db.session.commit()
+            return "Successfully Added", 200
+        else:
+            add_med_body = {
+                "med_name": form["med_name"],
+                "recommended_dosage": form["recommended_dosage"],
+                "side_effects": form["side_effects"]
+            }
+            add_med = requests.post("http://localhost:8000/add-medicine", json=add_med_body)
+            if add_med.status_code == 200:
+                add_pres = requests.post("http://localhost:8000/add-prescription", json=form)
+                if add_pres.status_code == 200:
+                    return "Successfully Added", 200
+                else:
+                    return "Failed to add prescription", 500
+    return "Unexpected Error", 500
 
 
 @app.route('/delete-content/table', methods=["GET", "DELETE"])
