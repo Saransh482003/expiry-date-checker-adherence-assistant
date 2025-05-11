@@ -499,11 +499,49 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         if (!localIsRecording) {
                           if (await audioRecorder.hasPermission()) {
                             final Directory appDocumentDir = await getApplicationDocumentsDirectory();
-                            final String filePath = '${appDocumentDir.path}/prescription_recording.wav';
-                            await audioRecorder.start(const RecordConfig(), path: filePath);
+                            final String filePath = '${appDocumentDir.path}/prescription_recording.wav';                            await audioRecorder.start(const RecordConfig(), path: filePath);
                             setDialogState(() {
                               localIsRecording = true;
                               recordingPath = filePath;
+                            });
+                            // Set 30-second limit
+                            Future.delayed(const Duration(seconds: 30), () async {
+                              if (localIsRecording) {
+                                String? audioPath = await audioRecorder.stop();
+                                if (audioPath != null) {
+                                  final File audioFile = File(audioPath);
+                                  setDialogState(() {
+                                    localIsRecording = false;
+                                    recordingPath = null;
+                                  });
+                                  Navigator.of(context).pop();
+                                  try {
+                                    var request = http.MultipartRequest('POST',Uri.parse('$baseUrl/transcribe'));
+                                    request.files.add(
+                                      await http.MultipartFile.fromPath(
+                                        'file',
+                                        audioFile.path,
+                                      ),
+                                    );
+                                    var response = await request.send();
+                                    await audioFile.delete();
+                                    if (response.statusCode == 200) {
+                                      print('Recording sent and deleted successfully.');
+                                    } else {
+                                      print('Failed to upload. Status code: ${response.statusCode}');
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Failed to send recording')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    print('Error uploading recording: $e');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Error uploading recording')),
+                                    );
+                                  }
+                                  _showPrescriptionForm(isPrefilled: true);
+                                }
+                              }
                             });
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
