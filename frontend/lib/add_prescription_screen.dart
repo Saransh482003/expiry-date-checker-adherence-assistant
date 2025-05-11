@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'theme_constants.dart';
 import 'constants.dart';
+import 'package:record/record.dart';
 
 class AddPrescriptionScreen extends StatefulWidget {
   final String username;
@@ -22,7 +26,9 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   final TextEditingController _medicineNameController = TextEditingController();
   final TextEditingController _dosageController = TextEditingController();
   final TextEditingController _sideEffectsController = TextEditingController();
-  final TextEditingController _frequencyController = TextEditingController();  @override
+  final TextEditingController _frequencyController = TextEditingController();
+  final AudioRecorder audioRecorder = AudioRecorder();
+  @override
   void dispose() {
     _medicineNameController.dispose();
     _dosageController.dispose();
@@ -444,6 +450,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   }
   void _showRecordingModal() {
     bool localIsRecording = false;
+    String? recordingPath = null;
 
     showDialog(
       context: context,
@@ -488,13 +495,59 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                           color: localIsRecording ? Colors.red : ThemeConstants.primaryColor,
                         ),
                       ),
-                      onPressed: () {
-                        setDialogState(() {
-                          localIsRecording = !localIsRecording;
-                        });
+                      onPressed: () async {
                         if (!localIsRecording) {
+                          if (await audioRecorder.hasPermission()) {
+                            final Directory appDocumentDir = await getApplicationDocumentsDirectory();
+                            final String filePath = '${appDocumentDir.path}/prescription_recording.wav';
+                            await audioRecorder.start(const RecordConfig(), path: filePath);
+                            setDialogState(() {
+                              localIsRecording = true;
+                              recordingPath = filePath;
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Microphone permission denied')),
+                            );
+                          }
+                        }
+                        else {
+                          String? audioPath = await audioRecorder.stop();
+                          if (audioPath != null) {
+                            final File audioFile = File(audioPath);
+                            setDialogState(() {
+                              localIsRecording = !localIsRecording;
+                              recordingPath = null;
+                            });
                           Navigator.of(context).pop();
+                          try {
+                            var request = http.MultipartRequest('POST',Uri.parse('$baseUrl/transcribe'));
+                            request.files.add(
+                              await http.MultipartFile.fromPath(
+                                'file',
+                                audioFile.path,
+                              ),
+                            );
+
+                            var response = await request.send();
+                            await audioFile.delete();
+                            if (response.statusCode == 200) {
+                              // print(response.toString());
+                              print('Recording sent and deleted successfully.');
+                            } else {
+                              print('Failed to upload. Status code: ${response.statusCode}');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to send recording')),
+                              );
+                            }
+                          } catch (e) {
+                            print('Error uploading recording: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Error uploading recording')),
+                            );
+                          }
                           _showPrescriptionForm(isPrefilled: true);
+                        }
                         }
                       },
                     ),

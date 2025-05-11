@@ -18,6 +18,9 @@ import ssl
 import json
 from flask_socketio import SocketIO
 import pytz
+import assemblyai as aai
+import io
+
 
 with open("authorization.json") as f:
     auth = json.loads(f.read())
@@ -343,6 +346,27 @@ def addPrescription():
                     return "Failed to add prescription", 500
     return "Unexpected Error", 500
 
+
+@app.route("/transcribe", methods=["POST"])
+def transcribe():
+    aai.settings.api_key = auth["assemblyai-api"]
+
+    if 'file' not in request.files:
+        return "No file part in the request", 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return "No selected file", 400
+
+    file_stream = io.BytesIO(file.read())
+    config = aai.TranscriptionConfig(speech_model=aai.SpeechModel.best)
+    transcript = aai.Transcriber(config=config).transcribe(file_stream)
+
+    if transcript.status == "error":
+        raise RuntimeError(f"Transcription failed: {transcript.error}")
+    print(transcript.text)
+    return transcript.text, 200
 
 @app.route('/delete-content/table', methods=["GET", "DELETE"])
 def delete_content():
