@@ -22,9 +22,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   final TextEditingController _medicineNameController = TextEditingController();
   final TextEditingController _dosageController = TextEditingController();
   final TextEditingController _sideEffectsController = TextEditingController();
-  final TextEditingController _frequencyController = TextEditingController();
-
-  @override
+  final TextEditingController _frequencyController = TextEditingController();  @override
   void dispose() {
     _medicineNameController.dispose();
     _dosageController.dispose();
@@ -207,15 +205,11 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                       // TODO: Implement camera capture
                       _showPrescriptionForm(isPrefilled: true);
                     },
-                  ),
-                  _buildOptionButton(
+                  ),                  _buildOptionButton(
                     icon: Icons.mic,
                     title: 'Voice Input',
                     subtitle: 'Dictate your prescription details',
-                    onTap: () {
-                      // TODO: Implement voice input
-                      _showPrescriptionForm(isPrefilled: true);
-                    },
+                    onTap: _showRecordingModal,
                   ),
                   _buildOptionButton(
                     icon: Icons.edit,
@@ -445,6 +439,72 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
             borderSide: BorderSide(color: ThemeConstants.primaryColor),
           ),
         ),
+      ),
+    );
+  }
+  void _showRecordingModal() {
+    bool localIsRecording = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) => StatefulBuilder(
+        builder: (BuildContext context, StateSetter setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Voice Recording',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: ThemeConstants.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: (localIsRecording ? Colors.red : ThemeConstants.primaryColor).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      iconSize: 48,
+                      icon: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return ScaleTransition(scale: animation, child: child);
+                        },
+                        child: Icon(
+                          localIsRecording ? Icons.mic : Icons.mic,
+                          key: ValueKey<bool>(localIsRecording),
+                          color: localIsRecording ? Colors.red : ThemeConstants.primaryColor,
+                        ),
+                      ),
+                      onPressed: () {
+                        setDialogState(() {
+                          localIsRecording = !localIsRecording;
+                        });
+                        if (!localIsRecording) {
+                          Navigator.of(context).pop();
+                          _showPrescriptionForm(isPrefilled: true);
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
