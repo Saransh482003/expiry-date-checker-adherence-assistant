@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,7 @@ import 'package:record/record.dart';
 class AddPrescriptionScreen extends StatefulWidget {
   final String username;
   final String password;
-  
+
   const AddPrescriptionScreen({
     Key? key,
     required this.username,
@@ -75,7 +76,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to add prescription: ${response.body}')),
+            SnackBar(
+                content: Text('Failed to add prescription: ${response.body}')),
           );
         }
       }
@@ -99,8 +101,10 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
         backgroundColor: ThemeConstants.primaryColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-      ),      body: Column(
-        children: [          // Top section with modern design
+      ),
+      body: Column(
+        children: [
+          // Top section with modern design
           Expanded(
             flex: 3,
             child: Container(
@@ -194,7 +198,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
               ),
             ),
           ),
-          
+
           // Bottom section with options
           Expanded(
             flex: 4,
@@ -211,7 +215,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                       // TODO: Implement camera capture
                       _showPrescriptionForm(isPrefilled: true);
                     },
-                  ),                  _buildOptionButton(
+                  ),
+                  _buildOptionButton(
                     icon: Icons.mic,
                     title: 'Voice Input',
                     subtitle: 'Dictate your prescription details',
@@ -299,112 +304,118 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   void _showPrescriptionForm({required bool isPrefilled}) {
     // If isPrefilled is true, we would pre-populate the fields with detected/dictated data
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.9,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isPrefilled ? 'Review Details' : 'Enter Details',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+              height: MediaQuery.of(context).size.height * 0.9,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isPrefilled ? 'Review Details' : 'Enter Details',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildInputField(
-                  controller: _medicineNameController,
-                  label: 'Medicine Name',
-                  icon: Icons.medication,
-                ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _dosageController,
-                label: 'Recommended Dosage',
-                icon: Icons.schedule,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _sideEffectsController,
-                label: 'Side Effects',
-                icon: Icons.warning_amber_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _frequencyController,
-                label: 'Frequency (times per day)',
-                icon: Icons.repeat,
-                keyboardType: TextInputType.number,
-              ),              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _dosageController,
-                label: 'Recommended Dosage',
-                icon: Icons.schedule,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _sideEffectsController,
-                label: 'Side Effects',
-                icon: Icons.warning_amber_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildInputField(
-                controller: _frequencyController,
-                label: 'Frequency (times per day)',
-                icon: Icons.repeat,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  _addPrescription();
-                  Navigator.pop(context); // Close the bottom sheet first
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ThemeConstants.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 24),
+                      _buildInputField(
+                        controller: _medicineNameController,
+                        label: 'Medicine Name',
+                        icon: Icons.medication,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _dosageController,
+                        label: 'Recommended Dosage',
+                        icon: Icons.schedule,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _sideEffectsController,
+                        label: 'Side Effects',
+                        icon: Icons.warning_amber_rounded,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _frequencyController,
+                        label: 'Frequency (times per day)',
+                        icon: Icons.repeat,
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _dosageController,
+                        label: 'Recommended Dosage',
+                        icon: Icons.schedule,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _sideEffectsController,
+                        label: 'Side Effects',
+                        icon: Icons.warning_amber_rounded,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _frequencyController,
+                        label: 'Frequency (times per day)',
+                        icon: Icons.repeat,
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () {
+                          _addPrescription();
+                          Navigator.pop(
+                              context); // Close the bottom sheet first
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ThemeConstants.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add Prescription',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                          height: 16), // Add padding for bottom safe area
+                      SizedBox(
+                          height: MediaQuery.of(context)
+                              .viewInsets
+                              .bottom), // Handle keyboard
+                    ],
                   ),
                 ),
-                child: const Text(
-                  'Add Prescription',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
               ),
-              const SizedBox(height: 16), // Add padding for bottom safe area
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom), // Handle keyboard
-            ],
-          ),
-        ),
-      ),
-    ));
+            ));
   }
 
   Widget _buildInputField({
@@ -448,9 +459,11 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
       ),
     );
   }
+
   void _showRecordingModal() {
     bool localIsRecording = false;
     String? recordingPath = null;
+    int remainingSeconds = 30;
 
     showDialog(
       context: context,
@@ -476,6 +489,18 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
+                  if (localIsRecording)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        '$remainingSeconds s',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -499,11 +524,25 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         if (!localIsRecording) {
                           if (await audioRecorder.hasPermission()) {
                             final Directory appDocumentDir = await getApplicationDocumentsDirectory();
-                            final String filePath = '${appDocumentDir.path}/prescription_recording.wav';                            await audioRecorder.start(const RecordConfig(), path: filePath);
+                            final String filePath = '${appDocumentDir.path}/prescription_recording.wav';
+                            await audioRecorder.start(const RecordConfig(), path: filePath);
                             setDialogState(() {
                               localIsRecording = true;
                               recordingPath = filePath;
+                              remainingSeconds = 30;
                             });
+
+                            // Start countdown timer
+                            Timer.periodic(const Duration(seconds: 1), (timer) {
+                              if (!localIsRecording || remainingSeconds <= 0) {
+                                timer.cancel();
+                                return;
+                              }
+                              setDialogState(() {
+                                remainingSeconds--;
+                              });
+                            });
+
                             // Set 30-second limit
                             Future.delayed(const Duration(seconds: 30), () async {
                               if (localIsRecording) {
@@ -516,7 +555,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                                   });
                                   Navigator.of(context).pop();
                                   try {
-                                    var request = http.MultipartRequest('POST',Uri.parse('$baseUrl/transcribe'));
+                                    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
                                     request.files.add(
                                       await http.MultipartFile.fromPath(
                                         'file',
@@ -548,8 +587,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                               const SnackBar(content: Text('Microphone permission denied')),
                             );
                           }
-                        }
-                        else {
+                        } else {
                           String? audioPath = await audioRecorder.stop();
                           if (audioPath != null) {
                             final File audioFile = File(audioPath);
@@ -557,35 +595,33 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                               localIsRecording = !localIsRecording;
                               recordingPath = null;
                             });
-                          Navigator.of(context).pop();
-                          try {
-                            var request = http.MultipartRequest('POST',Uri.parse('$baseUrl/transcribe'));
-                            request.files.add(
-                              await http.MultipartFile.fromPath(
-                                'file',
-                                audioFile.path,
-                              ),
-                            );
-
-                            var response = await request.send();
-                            await audioFile.delete();
-                            if (response.statusCode == 200) {
-                              // print(response.toString());
-                              print('Recording sent and deleted successfully.');
-                            } else {
-                              print('Failed to upload. Status code: ${response.statusCode}');
+                            Navigator.of(context).pop();
+                            try {
+                              var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
+                              request.files.add(
+                                await http.MultipartFile.fromPath(
+                                  'file',
+                                  audioFile.path,
+                                ),
+                              );
+                              var response = await request.send();
+                              await audioFile.delete();
+                              if (response.statusCode == 200) {
+                                print('Recording sent and deleted successfully.');
+                              } else {
+                                print('Failed to upload. Status code: ${response.statusCode}');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Failed to send recording')),
+                                );
+                              }
+                            } catch (e) {
+                              print('Error uploading recording: $e');
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Failed to send recording')),
+                                const SnackBar(content: Text('Error uploading recording')),
                               );
                             }
-                          } catch (e) {
-                            print('Error uploading recording: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Error uploading recording')),
-                            );
+                            _showPrescriptionForm(isPrefilled: true);
                           }
-                          _showPrescriptionForm(isPrefilled: true);
-                        }
                         }
                       },
                     ),
