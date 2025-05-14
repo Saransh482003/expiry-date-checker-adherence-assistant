@@ -38,7 +38,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Set Reminder Time',
               style: TextStyle(
                 fontSize: 20,
@@ -63,7 +63,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                     onChanged: (index) => setState(() => selectedHour = index + 1),
                   ),
                   const SizedBox(width: 20),
-                  Text(
+                  const Text(
                     ':',
                     style: TextStyle(
                       fontSize: 30,
@@ -112,7 +112,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                       TimeOfDay(hour: hour, minute: selectedMinute),
                     );
                   },
-                  child: Text(
+                  child: const Text(
                     'OK',
                     style: TextStyle(
                       color: ThemeConstants.primaryColor,

@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:frontend/services/noti_serve.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:lottie/lottie.dart';
 import 'dashboard_screen.dart';
 import 'signup.dart';
 import 'package:frontend/constants.dart';
 import 'theme_constants.dart';
 import 'package:flutter/services.dart';
-import 'package:frontend/services/noti_serve.dart';
+import 'expiry-date-check.dart';
 
 
 void main() {
@@ -36,8 +35,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routes: {
-        '/signup': (context) => SignUpScreen(),
-        '/main': (context) => MyHomePage (),
+        '/signup': (context) => const SignUpScreen(),
+        '/main': (context) => const MyHomePage (),
+        '/expiry-check': (context) => const ExpiryDateCheck (),
         // add other routes here
       },
       home: const MyHomePage(),

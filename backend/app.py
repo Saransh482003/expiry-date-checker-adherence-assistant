@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from sqlalchemy import desc
 from flask_caching import Cache
@@ -20,6 +20,53 @@ from flask_socketio import SocketIO
 import pytz
 import assemblyai as aai
 import io
+import cv2
+import numpy as np
+import torch
+from PIL import Image
+from paddleocr import PaddleOCR
+from ultralytics import YOLO
+import re
+from werkzeug.utils import secure_filename
+import os
+import base64
+
+# Initialize models
+model = YOLO('expiry_date_reader_model.pt')
+ocr = PaddleOCR(use_angle_cls=True, lang='en')
+
+def standardize_date(text):
+    # Find dates in various formats
+    date_patterns = [
+        r'(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',  # DD/MM/YYYY or MM/DD/YYYY
+        r'(\d{2,4}[-/]\d{1,2}[-/]\d{1,2})',  # YYYY/MM/DD
+        r'(\d{1,2}\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{2,4})',  # DD Mon YYYY
+        r'(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{1,2}\s*,?\s*\d{2,4}'  # Mon DD, YYYY
+    ]
+    
+    for pattern in date_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        if matches:
+            try:
+                date_str = matches[0]
+                # Convert to datetime and then to standardized format
+                formats = [
+                    "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d",
+                    "%d-%m-%Y", "%m-%d-%Y", "%Y-%m-%d",
+                    "%d %b %Y", "%d %B %Y",
+                    "%b %d %Y", "%B %d %Y",
+                    "%b %d, %Y", "%B %d, %Y"
+                ]
+                
+                for fmt in formats:
+                    try:
+                        date_obj = datetime.strptime(date_str, fmt)
+                        return date_obj.strftime("%Y-%m-%d")
+                    except ValueError:
+                        continue
+            except Exception:
+                continue
+    return None
 
 
 with open("authorization.json") as f:
@@ -138,9 +185,7 @@ def send_email_message(self):
         for index, row in data.iterrows():
             try:
 
-                body = f"""
-                    Dear {row['name']},
-
+                body = f"""Dear {row['name']},
                     This is a friendly reminder to take your prescribed medication: **{row['medicine_name']}**.
 
                     Staying consistent with your medication is essential for your health and well-being. 
@@ -346,6 +391,8 @@ def addPrescription():
                     return "Failed to add prescription", 500
     return "Unexpected Error", 500
 
+def voiceFunctionCall(medicine_name:str, frequency:str):
+    pass
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
@@ -365,8 +412,230 @@ def transcribe():
 
     if transcript.status == "error":
         raise RuntimeError(f"Transcription failed: {transcript.error}")
-    print(transcript.text)
+    
     return transcript.text, 200
+
+@app.route("/expiry-date-reader", methods=["POST"])
+def expiry_date_reader():
+    extracted_dates = []
+    standardized_dates = []
+    final_date = None
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    try:
+        # Read image bytes
+        image_bytes = file.read()
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # cv2.imshow("Uploaded Image", image)
+        # cv2.waitKey(0)  # Wait for a key press to close
+        # cv2.destroyAllWindows()
+
+        if image is None:
+            return jsonify({"error": "Invalid image"}), 400
+
+        # Run YOLO model on the image
+        img_for_yolo = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        results = model(img_for_yolo)
+        
+        # Get the result image with annotations
+        result_img = results[0].plot()  # This returns a numpy array
+        _, result_buffer = cv2.imencode('.jpg', result_img)
+        result_img_bytes = result_buffer.tobytes()
+        
+        # Process bounding boxes
+        boxes = results[0].boxes.xyxy.cpu().numpy() if hasattr(results[0].boxes, 'xyxy') else []
+        cropped_images = []
+        
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box)
+            crop = image[y1:y2, x1:x2]
+            if crop.size > 0:
+                cropped_images.append(crop)
+
+        for crop in cropped_images:
+            crop_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+            ocr_result = ocr.ocr(crop_rgb, cls=True)
+            if ocr_result and len(ocr_result) > 0:
+                for line in ocr_result[0]:
+                    text = line[1][0]
+                    extracted_dates.append(text)
+                    # Improved date standardization
+                    std_date = standardize_medical_date(text)
+                    if std_date:
+                        standardized_dates.append(std_date)
+
+        if standardized_dates:
+            try:
+                date_objs = [datetime.strptime(d, "%Y-%m-%d") for d in standardized_dates]
+                max_date = max(date_objs)
+                final_date = max_date.strftime("%Y-%m-%d")
+            except Exception:
+                final_date = standardized_dates[0] if standardized_dates else None
+
+
+        print({
+            "success": True,
+            "detected_dates": extracted_dates,
+            "standardized_dates": standardized_dates,
+            "final_date": final_date,
+            # "annotated_image": base64.b64encode(result_img_bytes).decode('utf-8') if result_img_bytes else None
+        })  
+        return {
+            "success": True,
+            "detected_dates": extracted_dates,
+            "standardized_dates": standardized_dates,
+            "final_date": final_date,
+            # "annotated_image": base64.b64encode(result_img_bytes).decode('utf-8') if result_img_bytes else None
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }, 500
+
+def standardize_medical_date(date_str):
+    """
+    Robust date standardization that defaults to 1st day when no day is specified
+    Handles formats like:
+    - Dt:03/2023 → 2023-03-01
+    - EXP 12/25/2025 → 2025-12-25
+    - 15-02-2026 → 2026-02-15
+    - 2025.12 → 2025-12-01
+    - Dec 2025 → 2025-12-01
+    - 20251231 → 2025-12-31
+    """
+    try:
+        original_str = date_str
+        date_str = date_str.lower()
+        
+        # Remove common prefixes/suffixes and normalize separators
+        date_str = re.sub(r'(^dt[:]?|^exp|expiry|exp date|use by|best before)[:\s]*', '', date_str)
+        date_str = re.sub(r'[\s\-_\.]', ' ', date_str).strip()
+        date_str = re.sub(r'(\d)(st|nd|rd|th)\b', r'\1', date_str)
+        
+        # Try different date patterns
+        patterns = [
+            # Full dates with day
+            (r'(\d{1,2}) (\d{1,2}) (\d{4})', lambda m: validate_and_format(m.group(3), m.group(2), m.group(1))),  # DD MM YYYY
+            (r'(\d{1,2}) (\d{1,2}) (\d{4})', lambda m: validate_and_format(m.group(3), m.group(1), m.group(2))),  # MM DD YYYY
+            (r'(\d{4}) (\d{1,2}) (\d{1,2})', lambda m: validate_and_format(m.group(1), m.group(2), m.group(3))),  # YYYY MM DD
+            (r'(\w{3,}) (\d{1,2}),? (\d{4})', lambda m: format_month_name_date(m.group(1), m.group(2), m.group(3))),  # Month DD YYYY
+            (r'(\d{1,2}) (\w{3,}) (\d{4})', lambda m: format_month_name_date(m.group(2), m.group(1), m.group(3))),  # DD Month YYYY
+            
+            # Month-year only (default to 1st day)
+            (r'(\d{1,2}) (\d{4})', lambda m: f"{m.group(2)}-{int(m.group(1)):02d}-01"),  # MM YYYY
+            (r'(\w{3,}) (\d{4})', lambda m: format_month_name_date(m.group(1), '1', m.group(2))),  # Month YYYY
+            
+            # Various separator formats
+            (r'(\d{2})/(\d{2})/(\d{4})', lambda m: validate_and_format(m.group(3), m.group(2), m.group(1))),  # DD/MM/YYYY
+            (r'(\d{2})/(\d{2})/(\d{4})', lambda m: validate_and_format(m.group(3), m.group(1), m.group(2))),  # MM/DD/YYYY
+            (r'(\d{4})/(\d{2})/(\d{2})', lambda m: f"{m.group(1)}-{m.group(2)}-{m.group(3)}"),
+            (r'(\d{2})/(\d{4})', lambda m: f"{m.group(2)}-{int(m.group(1)):02d}-01"),  # MM/YYYY
+        ]
+        
+        for pattern, formatter in patterns:
+            match = re.fullmatch(pattern, date_str)
+            if match:
+                try:
+                    formatted_date = formatter(match)
+                    if validate_date(formatted_date):
+                        return formatted_date
+                except (ValueError, IndexError):
+                    continue
+        
+        # Fallback to more aggressive cleaning
+        digits = re.sub(r'[^\d]', '', original_str)
+        if len(digits) == 6:  # MMDDYY or DDMMYY
+            return try_ambiguous_date(digits)
+        elif len(digits) == 8:  # YYYYMMDD or MMDDYYYY
+            return try_compact_date(digits)
+        elif len(digits) in [4,5,6]:  # Partial dates
+            return try_partial_date(digits)
+            
+        return None
+        
+    except Exception as e:
+        print(f"Error standardizing date '{original_str}': {str(e)}")
+        return None
+
+def try_partial_date(digits):
+    """Handle partial dates by defaulting to 1st day and first month if needed"""
+    if len(digits) == 6:  # YYMMDD
+        return f"20{digits[:2]}-{int(digits[2:4]):02d}-{int(digits[4:6]):02d}"
+    elif len(digits) == 4:  # YYYY or MMDD
+        if digits.isdigit():
+            if 2000 <= int(digits) <= 2050:  # Likely year
+                return f"{digits}-01-01"
+            elif 1 <= int(digits[:2]) <= 12:  # Likely MMYY
+                return f"20{digits[2:]}-{int(digits[:2]):02d}-01"
+    return None
+
+def format_month_name_date(month_str, day_str, year_str):
+    """Format dates with month names"""
+    month_map = {
+        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+    }
+    month = month_map.get(month_str[:3].lower())
+    if month:
+        return f"{year_str}-{month:02d}-{int(day_str):02d}"
+    return None
+
+def validate_date(date_str):
+    """Validate that the date is reasonable (not in distant past/future)"""
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        current_year = datetime.now().year
+        return 2000 <= date_obj.year <= current_year + 20
+    except ValueError:
+        return False
+
+def validate_and_format(year, month, day):
+    """Validate day/month ranges and format"""
+    if 1 <= int(month) <= 12 and 1 <= int(day) <= 31:
+        return f"{year}-{int(month):02d}-{int(day):02d}"
+    return None
+
+def try_ambiguous_date(digits):
+    """Try to parse ambiguous 6-digit dates (MMDDYY or DDMMYY)"""
+    # Try DDMMYY
+    dd, mm, yy = int(digits[:2]), int(digits[2:4]), int(digits[4:])
+    if 1 <= mm <= 12 and 1 <= dd <= 31:
+        return f"20{yy:02d}-{mm:02d}-{dd:02d}"
+    
+    # Try MMDDYY
+    mm, dd, yy = int(digits[:2]), int(digits[2:4]), int(digits[4:])
+    if 1 <= mm <= 12 and 1 <= dd <= 31:
+        return f"20{yy:02d}-{mm:02d}-{dd:02d}"
+    
+    return None
+
+def try_compact_date(digits):
+    """Try to parse 8-digit dates (YYYYMMDD or MMDDYYYY)"""
+    # Try YYYYMMDD
+    if digits[:4].isdigit() and 2000 <= int(digits[:4]) <= 2050:
+        year, month, day = int(digits[:4]), int(digits[4:6]), int(digits[6:8])
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return f"{year}-{month:02d}-{day:02d}"
+    
+    # Try MMDDYYYY
+    if digits[4:].isdigit() and 2000 <= int(digits[4:]) <= 2050:
+        month, day, year = int(digits[:2]), int(digits[2:4]), int(digits[4:8])
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return f"{year}-{month:02d}-{day:02d}"
+    
+    return None
+    
+
 
 @app.route('/delete-content/table', methods=["GET", "DELETE"])
 def delete_content():

@@ -44,7 +44,7 @@ class _TimePickerDialogState extends State<TimePickerDialog> {
           Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: ThemeConstants.primaryColor,
               shape: BoxShape.circle,
             ),
@@ -69,7 +69,7 @@ class _TimePickerDialogState extends State<TimePickerDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Set Reminder Time',
               style: TextStyle(
                 fontSize: 24,

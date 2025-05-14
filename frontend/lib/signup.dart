@@ -118,11 +118,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 // Password requirements hint - only show after first validation failure
                 if (_showPasswordHints) 
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0, left: 12.0, bottom: 8.0),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0, left: 12.0, bottom: 8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
                           'Password must contain:',
                           style: TextStyle(

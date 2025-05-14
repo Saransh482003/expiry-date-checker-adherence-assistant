@@ -83,10 +83,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text(
           'Patient Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: ThemeConstants.primaryColor,
+        ),        backgroundColor: ThemeConstants.primaryColor,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.document_scanner_outlined, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, '/expiry-check');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             onPressed: () {
@@ -107,9 +112,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   // Enhanced Profile Section
                   Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: ThemeConstants.primaryColor,
-                      borderRadius: const BorderRadius.only(
+                      borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(40),
                         bottomRight: Radius.circular(40),
                       ),
@@ -173,7 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                     ],
                                   ),
-                                  child: CircleAvatar(
+                                  child: const CircleAvatar(
                                     backgroundColor: Colors.white,
                                     child: Icon(
                                       Icons.person,
@@ -196,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         width: 2,
                                       ),
                                     ),
-                                    child: Icon(
+                                    child: const Icon(
                                       Icons.edit,
                                       size: 20,
                                       color: ThemeConstants.primaryColor,
@@ -446,7 +451,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: ThemeConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.medication,
                     color: ThemeConstants.primaryColor,
                     size: 24,
@@ -482,7 +487,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Text(
                     '$frequency times/day',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: ThemeConstants.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
@@ -528,7 +533,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                const Text(
                   'Set Reminder Time',
                   style: TextStyle(
                     fontSize: 24,

@@ -66,8 +66,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
       if (response.statusCode == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Prescription added successfully'),
+            const SnackBar(
+              content: Text('Prescription added successfully'),
               backgroundColor: ThemeConstants.primaryColor,
             ),
           );
@@ -168,7 +168,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                               ),
                             ],
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.medication_outlined,
                             size: 50,
                             color: ThemeConstants.primaryColor,
@@ -453,7 +453,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: ThemeConstants.primaryColor),
+            borderSide: const BorderSide(color: ThemeConstants.primaryColor),
           ),
         ),
       ),
@@ -462,7 +462,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
 
   void _showRecordingModal() {
     bool localIsRecording = false;
-    String? recordingPath = null;
+    String? recordingPath;
     int remainingSeconds = 30;
 
     showDialog(
@@ -479,8 +479,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
+                children: [                  const Text(
                     'Voice Recording',
                     style: TextStyle(
                       fontSize: 24,
@@ -488,6 +487,19 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                       color: ThemeConstants.primaryColor,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (!localIsRecording)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'You will have 30 seconds to speak your prescription details. Recording starts when you tap the mic.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 32),
                   if (localIsRecording)
                     Padding(
