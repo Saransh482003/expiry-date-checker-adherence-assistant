@@ -351,18 +351,20 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                   ),
                 ),
               ),
-            ),
-            // Guide box remains the same size
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: ThemeConstants.primaryColor,
-                  width: 2.0,
+            ),            // Guide box remains the same size
+            GestureDetector(
+              onTap: _isLoading ? null : _captureAndCheckExpiry,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: ThemeConstants.primaryColor,
+                    width: 2.0,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                borderRadius: BorderRadius.circular(8.0),
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.width * 0.9,
               ),
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: MediaQuery.of(context).size.width * 0.9,
             ),
             Positioned(
               bottom: 100,
