@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
+import 'package:lottie/lottie.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'constants.dart';
@@ -158,47 +159,73 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
         ),
         backgroundColor: ThemeConstants.primaryColor,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: _buildCameraPreview(),
+          Column(
+            children: [
+              Expanded(
+                child: _buildCameraPreview(),
+              ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Bottom padding for FAB
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildBottomContent(),
+                ),
+              ),
+            ],
           ),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(20.0),
-              child: CircularProgressIndicator(),
-            ),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
-          if (_expiryDate != null)
             Container(
-              padding: const EdgeInsets.all(20.0),
-              color: Colors.white,
-              child: Column(
-                children: [
-                  const Text(
-                    'Detected Expiry Date:',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+              color: Colors.black54,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _expiryDate!,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: ThemeConstants.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,                    
+                    children: [                      
+                      SizedBox(
+                        width: 150,
+                        height: 150,
+                        child: Lottie.asset(
+                          'assets/scanning.json',
+                          repeat: true,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Processing image...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
         ],
@@ -213,6 +240,84 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  Widget _buildBottomContent() {
+    if (_error != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.error_outline, color: Colors.red),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _error!,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_expiryDate != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: ThemeConstants.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                color: ThemeConstants.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Detected Expiry Date:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _expiryDate!,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: ThemeConstants.primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox(height: 0);
   }
 
   Widget _buildCameraPreview() {
@@ -242,7 +347,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                 bottom: 100,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: 8,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
