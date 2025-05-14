@@ -320,15 +320,36 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
         final previewRatio = _controller!.value.aspectRatio;
 
         // Calculate scale to fill width
-        final scale = previewRatio;
-
-        return Stack(
+        final scale = previewRatio;        return Stack(
           alignment: Alignment.center,
           children: [
+            // Base layer: Black and white preview
             Transform.scale(
               scale: scale,
               child: Center(
-                child: CameraPreview(_controller!),
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.matrix([
+                    0.2126, 0.7152, 0.0722, 0, 0,
+                    0.2126, 0.7152, 0.0722, 0, 0,
+                    0.2126, 0.7152, 0.0722, 0, 0,
+                    0, 0, 0, 1, 0,
+                  ]),
+                  child: CameraPreview(_controller!),
+                ),
+              ),
+            ),
+            // Color preview only inside box
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.width * 0.9,
+                child: Transform.scale(
+                  scale: scale,
+                  child: Center(
+                    child: CameraPreview(_controller!),
+                  ),
+                ),
               ),
             ),
             // Guide box remains the same size
