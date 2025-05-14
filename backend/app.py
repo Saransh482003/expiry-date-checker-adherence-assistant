@@ -434,9 +434,9 @@ def expiry_date_reader():
         nparr = np.frombuffer(image_bytes, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
-        cv2.imshow("Uploaded Image", image)
-        cv2.waitKey(0)  # Wait for a key press to close
-        cv2.destroyAllWindows()
+        # cv2.imshow("Uploaded Image", image)
+        # cv2.waitKey(0)  # Wait for a key press to close
+        # cv2.destroyAllWindows()
 
         if image is None:
             return jsonify({"error": "Invalid image"}), 400

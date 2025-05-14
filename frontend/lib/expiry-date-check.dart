@@ -172,48 +172,6 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
               ),
             ],
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,                    
-                    children: [                      
-                      SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Lottie.asset(
-                          'assets/scanning.json',
-                          repeat: true,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Processing image...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -307,155 +265,152 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
   }
 
   Widget _buildCameraPreview() {
-  return FutureBuilder<void>(
-    future: _initializeControllerFuture,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.done) {
-        if (_controller == null || !_controller!.value.isInitialized) {
-          return const Center(child: Text('Camera not initialized'));
-        }
+    return FutureBuilder<void>(
+      future: _initializeControllerFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          if (_controller == null || !_controller!.value.isInitialized) {
+            return const Center(child: Text('Camera not initialized'));
+          }
 
-        // Calculate the screen and preview aspects
-        final size = MediaQuery.of(context).size;
-        final deviceRatio = size.width / size.height;
-        final previewRatio = _controller!.value.aspectRatio;
+          final previewRatio = _controller!.value.aspectRatio;
+          final scale = previewRatio;
 
-        // Calculate scale to fill width
-        final scale = previewRatio;        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Base layer: Black and white preview
-            Transform.scale(
-              scale: scale,
-              child: Center(
-                child: ColorFiltered(
-                  colorFilter: const ColorFilter.matrix([
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0.2126, 0.7152, 0.0722, 0, 0,
-                    0, 0, 0, 1, 0,
-                  ]),
-                  child: CameraPreview(_controller!),
-                ),
-              ),
-            ),
-            // Color preview only inside box
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.width * 0.9,
-                child: Transform.scale(
-                  scale: scale,
-                  child: Center(
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              // Base layer: Black and white preview
+              Transform.scale(
+                scale: scale,
+                child: Center(
+                  child: ColorFiltered(
+                    colorFilter: const ColorFilter.matrix([
+                      0.2126, 0.7152, 0.0722, 0, 0,
+                      0.2126, 0.7152, 0.0722, 0, 0,
+                      0.2126, 0.7152, 0.0722, 0, 0,
+                      0, 0, 0, 1, 0,
+                    ]),
                     child: CameraPreview(_controller!),
                   ),
                 ),
               ),
-            ),            // Guide box with enhanced visual feedback
-            TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 1.0, end: _isTapped ? 0.98 : 1.0),
-              duration: const Duration(milliseconds: 150),
-              builder: (context, scale, child) {
-                return Transform.scale(
-                  scale: scale,
-                  child: GestureDetector(                    onTapDown: _isLoading ? null : (details) {
-                      setState(() {
-                        _isTapped = true;
-                      });
-                    },
-                    onTapUp: _isLoading ? null : (details) {
-                      setState(() {
-                        _isTapped = false;
-                      });
-                    },
-                    onTapCancel: () {
-                      setState(() {
-                        _isTapped = false;
-                      });
-                    },
-                    child: Stack(
-                      children: [
-                        // Animated container for the blue tint effect
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: ThemeConstants.primaryColor,
-                              width: 2.0,
-                            ),
-                            borderRadius: BorderRadius.circular(8.0),
-                            color: _isTapped 
-                              ? ThemeConstants.primaryColor.withOpacity(0.3)
-                              : Colors.transparent,
-                          ),
-                          width: MediaQuery.of(context).size.width * 0.9,
-                          height: MediaQuery.of(context).size.width * 0.9,
-                        ),
-                        // Material layer for ripple effect
-                        Positioned.fill(
-                          child: Material(                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(8.0),
-                              splashColor: ThemeConstants.primaryColor.withOpacity(0.4),
-                              highlightColor: ThemeConstants.primaryColor.withOpacity(0.2),
-                              onTap: _isLoading ? null : _captureAndCheckExpiry, // Same as FAB
-                            ),
-                          ),
-                        ),
-                        // Glowing border effect when tapped
-                        if (_isTapped)
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.0),
-                              border: Border.all(
-                                color: ThemeConstants.primaryColor.withOpacity(0.5),
-                                width: 4.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: ThemeConstants.primaryColor.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            height: MediaQuery.of(context).size.width * 0.9,
-                          ),
-                      ],
+              // Color preview inside box
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  height: MediaQuery.of(context).size.width * 0.9,
+                  child: Transform.scale(
+                    scale: scale,
+                    child: Center(
+                      child: CameraPreview(_controller!),
                     ),
-                  ),
-                );
-              },
-            ),
-            Positioned(
-              bottom: 100,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Align medicine strip within the box',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      } else {
-        return const Center(child: CircularProgressIndicator());
-      }
-    },
-  );
-}
+              // Guide box with visual feedback
+              GestureDetector(
+                onTapDown: _isLoading ? null : (details) {
+                  setState(() {
+                    _isTapped = true;
+                  });
+                },
+                onTapUp: _isLoading ? null : (details) {
+                  setState(() {
+                    _isTapped = false;
+                  });
+                  _captureAndCheckExpiry();
+                },
+                onTapCancel: () {
+                  setState(() {
+                    _isTapped = false;
+                  });
+                },
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  height: MediaQuery.of(context).size.width * 0.9,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: ThemeConstants.primaryColor,
+                      width: 2.0,
+                    ),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Blue tint effect when tapped
+                      if (_isTapped)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: ThemeConstants.primaryColor.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                      // Loading animation
+                      if (_isLoading)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Reading expiry date...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // Help text
+              Positioned(
+                bottom: 100,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Align medicine strip within the box',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
 }
