@@ -75,36 +75,21 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
 
       // Calculate crop dimensions based on the guide box
       final double screenWidth = MediaQuery.of(context).size.width;
-      final double boxWidth = screenWidth * 0.8;  // Same as in build method
-      final double boxHeight = screenWidth * 0.8;
-      print('$originalImage.width, $originalImage.height');
-      print('$boxWidth, $boxHeight');
-      // Calculate crop coordinates based on preview size vs image size ratio
-      final previewSize = _controller!.value.previewSize!;
-      final double widthRatio = originalImage.width / previewSize.width;
-      final double heightRatio = originalImage.height / previewSize.height;
-      
-      final int startX = (((boxWidth * widthRatio)) / 2).round();
-      final int startY = ((originalImage.height - (boxHeight * heightRatio)) / 2).round();
-      final int width = (boxWidth).round()*2;
-      final int height = (boxHeight * heightRatio).round();
+      final int originHeight = originalImage.height;
+      final int originWidth = originalImage.width;
+      final double boxHeight = originWidth * 0.9;
+      final double boxWidth = originWidth * 0.9;
 
-      // Ensure crop dimensions are within image bounds
-      final safeStartX = startX.clamp(0, originalImage.width - 1);
-      final safeStartY = startY.clamp(0, originalImage.height - 1);
-      final safeWidth = width.clamp(1, originalImage.width - safeStartX);
-      final safeHeight = height.clamp(1, originalImage.height - safeStartY);
-
-      // Crop image
+      final double xStart = (originWidth - boxWidth) / 2;
+      final double yStart = (originHeight - boxHeight) / 2;
       final img.Image croppedImage = img.copyCrop(
         originalImage,
-        x: safeStartX,
-        y: safeStartY,
-        width: safeWidth,
-        height: safeHeight,
+        x: xStart.round(),
+        y: yStart.round(),
+        width: boxWidth.round(),
+        height: boxHeight.round(),
       );
-
-      // Convert cropped image back to bytes
+      
       final croppedBytes = Uint8List.fromList(img.encodeJpg(croppedImage));
       
       // Create multipart request
@@ -355,8 +340,8 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                 ),
                 borderRadius: BorderRadius.circular(8.0),
               ),
-              width: MediaQuery.of(context).size.width * 0.8,
-              height: MediaQuery.of(context).size.width * 0.8,
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: MediaQuery.of(context).size.width * 0.9,
             ),
             Positioned(
               bottom: 100,
