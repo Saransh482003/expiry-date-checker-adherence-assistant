@@ -321,54 +321,69 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
   }
 
   Widget _buildCameraPreview() {
-    return FutureBuilder<void>(
-      future: _initializeControllerFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          if (_controller == null || !_controller!.value.isInitialized) {
-            return const Center(child: Text('Camera not initialized'));
-          }
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              CameraPreview(_controller!),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: ThemeConstants.primaryColor,
-                    width: 2.0,
-                  ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                width: MediaQuery.of(context).size.width * 0.8,
-                height: MediaQuery.of(context).size.width * 0.8,
-              ),
-              Positioned(
-                bottom: 100,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'Align medicine strip within the box',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        } else {
-          return const Center(child: CircularProgressIndicator());
+  return FutureBuilder<void>(
+    future: _initializeControllerFuture,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.done) {
+        if (_controller == null || !_controller!.value.isInitialized) {
+          return const Center(child: Text('Camera not initialized'));
         }
-      },
-    );
-  }
+
+        // Calculate the screen and preview aspects
+        final size = MediaQuery.of(context).size;
+        final deviceRatio = size.width / size.height;
+        final previewRatio = _controller!.value.aspectRatio;
+
+        // Calculate scale to fill width
+        final scale = previewRatio;
+
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(
+              scale: scale,
+              child: Center(
+                child: CameraPreview(_controller!),
+              ),
+            ),
+            // Guide box remains the same size
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: ThemeConstants.primaryColor,
+                  width: 2.0,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.width * 0.8,
+            ),
+            Positioned(
+              bottom: 100,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Align medicine strip within the box',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      } else {
+        return const Center(child: CircularProgressIndicator());
+      }
+    },
+  );
+}
 }
