@@ -21,6 +21,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
   bool _isLoading = false;
   String? _expiryDate;
   String? _error;
+  bool _isTapped = false; // Track tap state
 
   @override
   void initState() {
@@ -351,20 +352,83 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                   ),
                 ),
               ),
-            ),            // Guide box remains the same size
-            GestureDetector(
-              onTap: _isLoading ? null : _captureAndCheckExpiry,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: ThemeConstants.primaryColor,
-                    width: 2.0,
+            ),            // Guide box with enhanced visual feedback
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 1.0, end: _isTapped ? 0.98 : 1.0),
+              duration: const Duration(milliseconds: 150),
+              builder: (context, scale, child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: GestureDetector(                    onTapDown: _isLoading ? null : (details) {
+                      setState(() {
+                        _isTapped = true;
+                      });
+                    },
+                    onTapUp: _isLoading ? null : (details) {
+                      setState(() {
+                        _isTapped = false;
+                      });
+                    },
+                    onTapCancel: () {
+                      setState(() {
+                        _isTapped = false;
+                      });
+                    },
+                    child: Stack(
+                      children: [
+                        // Animated container for the blue tint effect
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: ThemeConstants.primaryColor,
+                              width: 2.0,
+                            ),
+                            borderRadius: BorderRadius.circular(8.0),
+                            color: _isTapped 
+                              ? ThemeConstants.primaryColor.withOpacity(0.3)
+                              : Colors.transparent,
+                          ),
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          height: MediaQuery.of(context).size.width * 0.9,
+                        ),
+                        // Material layer for ripple effect
+                        Positioned.fill(
+                          child: Material(                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8.0),
+                              splashColor: ThemeConstants.primaryColor.withOpacity(0.4),
+                              highlightColor: ThemeConstants.primaryColor.withOpacity(0.2),
+                              onTap: _isLoading ? null : _captureAndCheckExpiry, // Same as FAB
+                            ),
+                          ),
+                        ),
+                        // Glowing border effect when tapped
+                        if (_isTapped)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              border: Border.all(
+                                color: ThemeConstants.primaryColor.withOpacity(0.5),
+                                width: 4.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: ThemeConstants.primaryColor.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            height: MediaQuery.of(context).size.width * 0.9,
+                          ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.width * 0.9,
-              ),
+                );
+              },
             ),
             Positioned(
               bottom: 100,
