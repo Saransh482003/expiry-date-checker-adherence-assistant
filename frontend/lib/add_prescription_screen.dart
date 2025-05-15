@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
+import 'package:lottie/lottie.dart';
 import 'theme_constants.dart';
 import 'constants.dart';
 import 'package:record/record.dart';
@@ -29,6 +29,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   final TextEditingController _sideEffectsController = TextEditingController();
   final TextEditingController _frequencyController = TextEditingController();
   final AudioRecorder audioRecorder = AudioRecorder();
+
   @override
   void dispose() {
     _medicineNameController.dispose();
@@ -88,6 +89,47 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
         );
       }
     }
+  }
+
+  void _showProcessingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: Lottie.asset(
+                    'assets/scanning.json',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Hearing your whispers',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: ThemeConstants.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -210,10 +252,9 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                   _buildOptionButton(
                     icon: Icons.camera_alt,
                     title: 'Scan Prescription',
-                    subtitle: 'Take a photo of your prescription',
-                    onTap: () {
+                    subtitle: 'Take a photo of your prescription',                    onTap: () {
                       // TODO: Implement camera capture
-                      _showPrescriptionForm(isPrefilled: true);
+                      _showPrescriptionForm(isPrefilled: true, similarMatches: []);
                     },
                   ),
                   _buildOptionButton(
@@ -226,7 +267,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                     icon: Icons.edit,
                     title: 'Manual Entry',
                     subtitle: 'Type in prescription details',
-                    onTap: () => _showPrescriptionForm(isPrefilled: false),
+                    onTap: () => _showPrescriptionForm(isPrefilled: false, similarMatches: []),
                   ),
                 ],
               ),
@@ -301,7 +342,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     );
   }
 
-  void _showPrescriptionForm({required bool isPrefilled}) {
+  void _showPrescriptionForm({required bool isPrefilled, List<String>? similarMatches}) {
     // If isPrefilled is true, we would pre-populate the fields with detected/dictated data
     showModalBottomSheet(
         context: context,
@@ -339,6 +380,57 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      if (isPrefilled && similarMatches != null && similarMatches.isNotEmpty) ...[
+                        const Text(
+                          'Similar Medicine Names',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              OutlinedButton(
+                                onPressed: () {},  // Keep current name
+                                child: const Text('None'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: ThemeConstants.primaryColor,
+                                  side: const BorderSide(color: ThemeConstants.primaryColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ...similarMatches.map((name) =>
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: OutlinedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _medicineNameController.text = name;
+                                      });
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: ThemeConstants.primaryColor,
+                                      side: const BorderSide(color: ThemeConstants.primaryColor),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                    child: Text(name),
+                                  ),
+                                ),
+                              ).toList(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       _buildInputField(
                         controller: _medicineNameController,
                         label: 'Medicine Name',
@@ -442,6 +534,34 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     );
   }
 
+  Future<void> _handleAudioUpload(File audioFile) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          audioFile.path,
+        ),
+      );
+      var response = await request.send();
+      await audioFile.delete();
+      Navigator.of(context).pop(); // Close loading dialog
+      if (response.statusCode == 200) {
+        var responseData = await response.stream.bytesToString();
+        _handleVoiceApiResponse(responseData);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send recording')),
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Close loading dialog on error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error uploading recording')),
+      );
+    }
+  }
+
   void _showRecordingModal() {
     bool localIsRecording = false;
     String? recordingPath;
@@ -461,7 +581,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [                  const Text(
+                children: [
+                  const Text(
                     'Voice Recording',
                     style: TextStyle(
                       fontSize: 24,
@@ -548,36 +669,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                                     recordingPath = null;
                                   });
                                   Navigator.of(context).pop();
-                                  try {
-                                    var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
-                                    request.files.add(
-                                      await http.MultipartFile.fromPath(
-                                        'file',
-                                        audioFile.path,
-                                      ),
-                                    );                                    var response = await request.send();
-                                    await audioFile.delete();
-                                    if (response.statusCode == 200) {
-                                      var responseData = await response.stream.bytesToString();
-                                      var jsonResponse = jsonDecode(responseData);
-                                      print('Recording sent and deleted successfully. Response: $responseData');
-                                      
-                                      // Pre-fill the form fields
-                                      _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
-                                      _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
-                                    } else {
-                                      print('Failed to upload. Status code: ${response.statusCode}');
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Failed to send recording')),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    print('Error uploading recording: $e');
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Error uploading recording')),
-                                    );
-                                  }
-                                  _showPrescriptionForm(isPrefilled: true);
+                                  _showProcessingDialog(); // Show loading animation
+                                  await _handleAudioUpload(audioFile);
                                 }
                               }
                             });
@@ -595,36 +688,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                               recordingPath = null;
                             });
                             Navigator.of(context).pop();
-                            try {
-                              var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
-                              request.files.add(
-                                await http.MultipartFile.fromPath(
-                                  'file',
-                                  audioFile.path,
-                                ),
-                              );                              var response = await request.send();
-                              await audioFile.delete();
-                              if (response.statusCode == 200) {
-                                var responseData = await response.stream.bytesToString();
-                                var jsonResponse = jsonDecode(responseData);
-                                print('Recording sent and deleted successfully. Response: $responseData');
-                                
-                                // Pre-fill the form fields
-                                _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
-                                _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
-                              } else {
-                                print('Failed to upload. Status code: ${response.statusCode}');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to send recording')),
-                                );
-                              }
-                            } catch (e) {
-                              print('Error uploading recording: $e');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Error uploading recording')),
-                              );
-                            }
-                            _showPrescriptionForm(isPrefilled: true);
+                            _showProcessingDialog(); // Show loading animation
+                            await _handleAudioUpload(audioFile);
                           }
                         }
                       },
@@ -638,5 +703,22 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
         },
       ),
     );
+  }
+
+  void _handleVoiceApiResponse(String responseData) {
+    var jsonResponse = jsonDecode(responseData);
+    print('Recording sent and deleted successfully. Response: $responseData');
+    
+    // Extract similar matches from response
+    List<String> similarMatches = (jsonResponse['similar-matches'] as List<dynamic>? ?? [])
+        .map((e) => e.toString())
+        .toList();
+    
+    // Pre-fill the form fields
+    _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
+    _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
+
+    // Show the form with similar matches
+    _showPrescriptionForm(isPrefilled: true, similarMatches: similarMatches);
   }
 }

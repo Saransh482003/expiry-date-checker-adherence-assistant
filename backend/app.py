@@ -350,6 +350,17 @@ def getUserData():
             "message": "Server Error"
         }, 500
 
+@app.route("/get-medicine", methods=["GET"])
+def getMedicine():
+    med_name = request.args.get("med_name", "")
+    fetchMed = Medicines.query.filter(Medicines.med_name.ilike(f"%{med_name}%")).first()
+    response = {
+        "med_id": fetchMed.med_id if fetchMed else None,
+        "med_name": fetchMed.med_name if fetchMed else None,
+        "recommended_dosage": fetchMed.recommended_dosage if fetchMed else None,
+        "side_effects": fetchMed.side_effects if fetchMed else None
+    }
+    return response, 200 if fetchMed else 404
 
 @app.route("/add-medicine", methods=["POST"])
 def addMedicine():
@@ -446,7 +457,14 @@ def transcribe():
     gpt_response = json.loads(gpt_response["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"])
     name_matches = requests.get(f"http://localhost:8000/get-similar-names?med_name={text}").json()["matches"]
     gpt_response["similar-matches"] = [match[0] for match in name_matches]
-    print(gpt_response)
+    
+    fetchMed = Medicines.query.filter_by(med_name=gpt_response["medicine_name"]).first()
+    if fetchMed:
+        gpt_response["recommended_dosage"] = fetchMed.recommended_dosage
+        gpt_response["side_effects"] = fetchMed.side_effects
+    else:
+        gpt_response["recommended_dosage"] = ""
+        gpt_response["side_effects"] = ""
     return gpt_response, 200
 
 @app.route("/expiry-date-reader", methods=["POST"])
