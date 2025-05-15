@@ -224,44 +224,66 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
           ],
         ),
       );
-    }
+    }    if (_expiryDate != null) {
+      // Parse and format the date
+      DateTime? parsedDate;
+      String formattedDate = _expiryDate!;
+      try {
+        parsedDate = DateTime.parse(_expiryDate!);
+        formattedDate = "${parsedDate.day} ${_getMonthName(parsedDate.month)} ${parsedDate.year}";
+      } catch (e) {
+        // Keep original format if parsing fails
+      }
 
-    if (_expiryDate != null) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: ThemeConstants.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
-                Icons.check_circle_outline,
+                Icons.event,
                 color: ThemeConstants.primaryColor,
+                size: 28,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Detected Expiry Date:',
+                    'Medicine Expires On',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _expiryDate!,
+                    formattedDate,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 24,
                       color: ThemeConstants.primaryColor,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
@@ -412,6 +434,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
@@ -423,5 +446,13 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
         }
       },
     );
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[month - 1];
   }
 }
