@@ -363,25 +363,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         icon: Icons.repeat,
                         keyboardType: TextInputType.number,
                       ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _dosageController,
-                        label: 'Recommended Dosage',
-                        icon: Icons.schedule,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _sideEffectsController,
-                        label: 'Side Effects',
-                        icon: Icons.warning_amber_rounded,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        controller: _frequencyController,
-                        label: 'Frequency (times per day)',
-                        icon: Icons.repeat,
-                        keyboardType: TextInputType.number,
-                      ),
+                      
                       const SizedBox(height: 32),
                       ElevatedButton(
                         onPressed: () {
@@ -573,12 +555,16 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                                         'file',
                                         audioFile.path,
                                       ),
-                                    );
-                                    var response = await request.send();
+                                    );                                    var response = await request.send();
                                     await audioFile.delete();
                                     if (response.statusCode == 200) {
                                       var responseData = await response.stream.bytesToString();
+                                      var jsonResponse = jsonDecode(responseData);
                                       print('Recording sent and deleted successfully. Response: $responseData');
+                                      
+                                      // Pre-fill the form fields
+                                      _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
+                                      _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
                                     } else {
                                       print('Failed to upload. Status code: ${response.statusCode}');
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -616,11 +602,16 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                                   'file',
                                   audioFile.path,
                                 ),
-                              );
-                              var response = await request.send();
+                              );                              var response = await request.send();
                               await audioFile.delete();
                               if (response.statusCode == 200) {
-                                print('Recording sent and deleted successfully.');
+                                var responseData = await response.stream.bytesToString();
+                                var jsonResponse = jsonDecode(responseData);
+                                print('Recording sent and deleted successfully. Response: $responseData');
+                                
+                                // Pre-fill the form fields
+                                _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
+                                _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
                               } else {
                                 print('Failed to upload. Status code: ${response.statusCode}');
                                 ScaffoldMessenger.of(context).showSnackBar(
