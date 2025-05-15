@@ -577,7 +577,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                                     var response = await request.send();
                                     await audioFile.delete();
                                     if (response.statusCode == 200) {
-                                      print('Recording sent and deleted successfully.');
+                                      var responseData = await response.stream.bytesToString();
+                                      print('Recording sent and deleted successfully. Response: $responseData');
                                     } else {
                                       print('Failed to upload. Status code: ${response.statusCode}');
                                       ScaffoldMessenger.of(context).showSnackBar(

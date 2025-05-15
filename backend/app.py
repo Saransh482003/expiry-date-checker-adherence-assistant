@@ -32,9 +32,19 @@ import os
 import base64
 from typing import Dict, Any
 
+from rapidfuzz import process, fuzz
+
 # Initialize models
 model = YOLO('expiry_date_reader_model.pt')
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
+
+
+
+
+
+
+
+
 
 def standardize_date(text):
     # Find dates in various formats
@@ -392,6 +402,22 @@ def addPrescription():
                     return "Failed to add prescription", 500
     return "Unexpected Error", 500
 
+def find_all_matches(user_input, medicines, top_n=5):
+    matches = process.extract(user_input, medicines, scorer=fuzz.WRatio, limit=None)
+    sorted_matches = sorted(matches, key=lambda x: x[1], reverse=True)
+    if len(sorted_matches) > top_n:
+        sorted_matches = sorted_matches[:top_n]
+    return sorted_matches
+
+@app.route("/get-similar-names", methods=["GET"])
+def get_similar_names():
+    with app.app_context():
+        medicine_names = db.session.query(Medicines.med_name).all()
+        medicine_names = [name[0] for name in medicine_names]
+    user_input = request.args.get("med_name","")
+    matches = find_all_matches(user_input, medicine_names)
+    return {"matches": matches}
+
 def voiceFunctionCall(medicine_name:str, frequency:str):
     return {"medicine_name": medicine_name, "frequency": frequency}
 
@@ -415,8 +441,12 @@ def transcribe():
         raise RuntimeError(f"Transcription failed: {transcript.error}")
     
     text = transcript.text
+    print(text)
     gpt_response = query_gpt(text, tools=[SPEECH_TEXT_FILLER])
-
+    gpt_response = json.loads(gpt_response["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"])
+    name_matches = requests.get(f"http://localhost:8000/get-similar-names?med_name={text}").json()["matches"]
+    gpt_response["similar-matches"] = [match[0] for match in name_matches]
+    print(gpt_response)
     return gpt_response, 200
 
 @app.route("/expiry-date-reader", methods=["POST"])
@@ -651,8 +681,6 @@ def delete_content():
 
 
 
-
-
 SPEECH_TEXT_FILLER = {
     "type": "function",
     "function": {
@@ -679,7 +707,6 @@ SPEECH_TEXT_FILLER = {
 
 tools=[SPEECH_TEXT_FILLER]
 
-
 def query_gpt(user_input: str, tools: list[Dict[str, Any]] = tools) -> Dict[str, Any]:
     response = requests.post(
         "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions",
@@ -698,6 +725,8 @@ def query_gpt(user_input: str, tools: list[Dict[str, Any]] = tools) -> Dict[str,
         },
     )
     return response.json()
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)
