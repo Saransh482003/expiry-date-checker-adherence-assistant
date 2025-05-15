@@ -365,6 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     builder: (context) => AddPrescriptionScreen(
                       username: widget.username,
                       password: widget.password,
+                      userId: userData?['user_id'] ?? '',
                     ),
                   ),
                 );

@@ -12,11 +12,13 @@ import 'package:record/record.dart';
 class AddPrescriptionScreen extends StatefulWidget {
   final String username;
   final String password;
+  final String userId;
 
   const AddPrescriptionScreen({
     Key? key,
     required this.username,
     required this.password,
+    required this.userId,
   }) : super(key: key);
 
   @override
@@ -53,11 +55,11 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/add-prescription'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        headers: {'Content-Type': 'application/json'},        body: jsonEncode({
           'username': widget.username,
           'password': widget.password,
-          'medicine_name': _medicineNameController.text,
+          'user_id': widget.userId,
+          'med_name': _medicineNameController.text,
           'recommended_dosage': _dosageController.text,
           'side_effects': _sideEffectsController.text,
           'frequency': int.parse(_frequencyController.text),
@@ -409,11 +411,11 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                               ...similarMatches.map((name) =>
                                 Padding(
                                   padding: const EdgeInsets.only(right: 8),
-                                  child: OutlinedButton(
-                                    onPressed: () {
+                                  child: OutlinedButton(                                    onPressed: () async {
                                       setState(() {
                                         _medicineNameController.text = name;
                                       });
+                                      await _getMedicineDetails(name);
                                     },
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: ThemeConstants.primaryColor,
@@ -704,7 +706,6 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
       ),
     );
   }
-
   void _handleVoiceApiResponse(String responseData) {
     var jsonResponse = jsonDecode(responseData);
     print('Recording sent and deleted successfully. Response: $responseData');
@@ -717,8 +718,30 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     // Pre-fill the form fields
     _medicineNameController.text = jsonResponse['medicine_name'] ?? '';
     _frequencyController.text = (jsonResponse['frequency']?.toString() ?? '');
+    _dosageController.text = jsonResponse['recommended_dosage'] ?? '';
+    _sideEffectsController.text = jsonResponse['side_effects'] ?? '';
 
     // Show the form with similar matches
     _showPrescriptionForm(isPrefilled: true, similarMatches: similarMatches);
+  }
+
+  Future<void> _getMedicineDetails(String medicineName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/get-medicine?med_name=$medicineName'),
+      );
+
+      if (response.statusCode == 200) {
+        var jsonResponse = jsonDecode(response.body);
+        setState(() {
+          _dosageController.text = jsonResponse['recommended_dosage'] ?? '';
+          _sideEffectsController.text = jsonResponse['side_effects'] ?? '';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error fetching medicine details')),
+      );
+    }
   }
 }
