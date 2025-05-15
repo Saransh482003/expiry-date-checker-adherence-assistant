@@ -144,8 +144,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: ThemeConstants.primaryColor,
-      ),
-      body: Stack(
+      ),      body: Stack(
         children: [
           Column(
             children: [
@@ -153,7 +152,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                 child: _buildCameraPreview(),
               ),
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100), // Bottom padding for FAB
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -174,15 +173,6 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isLoading ? null : _captureAndCheckExpiry,
-        backgroundColor: ThemeConstants.primaryColor,
-        child: Icon(
-          _isLoading ? Icons.hourglass_empty : Icons.camera_alt,
-          color: Colors.white,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
@@ -353,7 +343,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                             color: Colors.black.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(8.0),
                           ),
-                          child: Center(
+                          child: const Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -367,8 +357,8 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
-                                const Text(
+                                SizedBox(height: 16),
+                                Text(
                                   'Reading expiry date...',
                                   style: TextStyle(
                                     color: Colors.white,
@@ -396,11 +386,11 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Align medicine strip within the box',
+                  child: Text(
+                    'Align medicine strip within the box and tap to scan',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                   ),
                 ),

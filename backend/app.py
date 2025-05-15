@@ -413,6 +413,9 @@ def transcribe():
     if transcript.status == "error":
         raise RuntimeError(f"Transcription failed: {transcript.error}")
     
+    text = transcript.text
+
+    
     return transcript.text, 200
 
 @app.route("/expiry-date-reader", methods=["POST"])
