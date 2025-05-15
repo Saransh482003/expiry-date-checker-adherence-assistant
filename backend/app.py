@@ -30,6 +30,7 @@ import re
 from werkzeug.utils import secure_filename
 import os
 import base64
+from typing import Dict, Any
 
 # Initialize models
 model = YOLO('expiry_date_reader_model.pt')
@@ -392,7 +393,7 @@ def addPrescription():
     return "Unexpected Error", 500
 
 def voiceFunctionCall(medicine_name:str, frequency:str):
-    pass
+    return {"medicine_name": medicine_name, "frequency": frequency}
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
@@ -414,9 +415,9 @@ def transcribe():
         raise RuntimeError(f"Transcription failed: {transcript.error}")
     
     text = transcript.text
+    gpt_response = query_gpt(text, tools=[SPEECH_TEXT_FILLER])
 
-    
-    return transcript.text, 200
+    return gpt_response, 200
 
 @app.route("/expiry-date-reader", methods=["POST"])
 def expiry_date_reader():
@@ -647,6 +648,56 @@ def delete_content():
     db.session.commit()
     return f"Deleted {num_rows_deleted} rows from the {table} table."
 
+
+
+
+
+
+SPEECH_TEXT_FILLER = {
+    "type": "function",
+    "function": {
+        "name": "voiceFunctionCall",
+        "description": "This function takes textual input and extract out the medicine name and frequency from it.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "medicine_name": {
+                    "type": "string",
+                    "description": "The name of the medicine"
+                },
+                "frequency": {
+                    "type": "integer",
+                    "description": "The frequency of the medicine to take each day"
+                },
+            },
+            "required": ["medicine_name","frequency"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+}
+
+tools=[SPEECH_TEXT_FILLER]
+
+
+def query_gpt(user_input: str, tools: list[Dict[str, Any]] = tools) -> Dict[str, Any]:
+    response = requests.post(
+        "https://aiproxy.sanand.workers.dev/openai/v1/chat/completions",
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {auth['openai-api']}"
+        },
+        json={
+            "model": "gpt-4o-mini",
+            "messages": [
+                {"role": "system","content": "You are a helpful assistant that can extract information from text related to medicine name, and frequency to take it per day. If the text gives you a medicine name that doesn't make sense or is not valid, rectify the name and give the correct name. If the text gives you a frequency that doesn't make sense or is not valid, rectify the frequency and give the correct frequency."},
+                {"role": "user", "content": user_input}
+            ],
+            "tools": tools,
+            "tool_choice": "auto",
+        },
+    )
+    return response.json()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8000)

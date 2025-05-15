@@ -22,6 +22,12 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
   String? _expiryDate;
   String? _error;
   bool _isTapped = false; // Track tap state
+  int? bottomHeight = 0;
+
+  // Add these variables to store preview dimensions
+  Size? previewSize;
+  double? previewWidth;
+  double? previewHeight;
 
   @override
   void initState() {
@@ -29,6 +35,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
     _initializeCamera();
   }
 
+  // Modify _initializeCamera to capture dimensions after initialization
   Future<void> _initializeCamera() async {
     try {
       final cameras = await availableCameras();
@@ -39,10 +46,20 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
         ResolutionPreset.high,
         enableAudio: false,
       );
-
+      
       _initializeControllerFuture = _controller?.initialize();
+      await _initializeControllerFuture; // Wait for initialization
+
       if (mounted) {
-        setState(() {});
+        setState(() {
+          // Get preview size after camera is initialized
+          previewSize = _controller?.value.previewSize;
+          previewWidth = previewSize?.width;
+          previewHeight = previewSize?.height;
+          bottomHeight = 165;
+          // bottomHeight = ((previewHeight! - (previewWidth! * 0.9)) / 2).round();
+          print('Preview dimensions: ${previewSize?.width} x ${previewSize?.height}');
+        });
       }
     } catch (e) {
       setState(() {
@@ -83,6 +100,10 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
 
       final double xStart = (originWidth - boxWidth) / 2;
       final double yStart = (originHeight - boxHeight) / 2;
+
+      // setState(() {
+      //   bottomHeight = yStart.round() + boxHeight.round() + 20;
+      // });
       final img.Image croppedImage = img.copyCrop(
         originalImage,
         x: xStart.round(),
@@ -376,14 +397,14 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
               ),
               // Help text
               Positioned(
-                bottom: 100,
+                bottom: bottomHeight!.toDouble(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black54,
+                    // color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
