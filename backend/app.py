@@ -31,8 +31,26 @@ from werkzeug.utils import secure_filename
 import os
 import base64
 from typing import Dict, Any
-
+import warnings
+import logging
+import os
 from rapidfuzz import process, fuzz
+warnings.filterwarnings('ignore')
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('paddleocr').setLevel(logging.ERROR)
+logging.getLogger('paddle').setLevel(logging.ERROR)
+
+# Disable specific Paddle startup warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='paddle')
+os.environ['PADDLE_DISABLE_STARTUP_WARNINGS'] = '1'
+
+# Initialize PaddleOCR with minimal logging
+ocr = PaddleOCR(
+    use_angle_cls=True, 
+    lang='en',
+    show_log=False,
+    use_gpu=False
+)
 
 # Initialize models
 model = YOLO('expiry_date_reader_model.pt')
@@ -342,7 +360,7 @@ def getUserData():
                 "recommended_dosage": m.recommended_dosage,
                 "side_effects": m.side_effects,
                 "frequency": p.frequency,
-                "expiry_date": datetime.strptime(p.expiry_date, "%Y-%m-%d %H:%M:%S").strftime("%A, %d %B %Y")
+                "expiry_date": datetime.strptime(p.expiry_date, "%Y-%m-%d %H:%M:%S").strftime("%d-%m-%Y")
             } for p, m in zip(fetchPrescriptions, fetchMedicines)],
         }, 200
     else:
@@ -394,7 +412,8 @@ def addPrescription():
                 pres_id=next_id,
                 med_id=fetchMed.med_id,
                 user_id=fetchUser.user_id,
-                frequency=form["frequency"]
+                frequency=form["frequency"],
+            expiry_date=datetime.strptime(form["expiry_date"], "%Y-%m-%d %H:%M:%S")
             )
             db.session.add(addPres)
             db.session.commit()

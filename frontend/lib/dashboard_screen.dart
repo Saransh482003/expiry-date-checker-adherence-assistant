@@ -331,13 +331,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 16),
                         if (userData?['prescriptions'] != null)
                           ...List<Widget>.from(
-                            (userData!['prescriptions'] as List).map(
-                              (prescription) => _buildPrescriptionCard(
+                            (userData!['prescriptions'] as List).map(                              (prescription) => _buildPrescriptionCard(
                                 medicineName: prescription['medicine_name'],
                                 presId: prescription['pres_id'],
                                 recommendedDosage: prescription['recommended_dosage'],
                                 sideEffects: prescription['side_effects'],
                                 frequency: prescription['frequency'],
+                                expiryDate: prescription['expiry_date'],
                               ),
                             ),
                           )
@@ -425,13 +425,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
   Widget _buildPrescriptionCard({
     required String medicineName,
     required String presId,
     required String recommendedDosage,
     required String sideEffects,
     required int frequency,
+    required String expiryDate,
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -502,11 +502,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Dosage',
               value: recommendedDosage,
             ),
-            const SizedBox(height: 8),
-            _buildPrescriptionDetail(
+            const SizedBox(height: 8),            _buildPrescriptionDetail(
               icon: Icons.warning_amber_rounded,
               title: 'Side Effects',
               value: sideEffects,
+            ),
+            const SizedBox(height: 8),
+            _buildPrescriptionDetail(
+              icon: Icons.event_available,
+              title: 'Expiry Date',
+              value: expiryDate,
             ),
             const SizedBox(height: 16),
             // New Button
@@ -810,12 +815,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
   Widget _buildPrescriptionDetail({
     required IconData icon,
     required String title,
     required String value,
   }) {
+    String displayValue = value;
+    String daysRemaining = '';
+    Color? textColor = Colors.grey[600];
+
+    if (title == 'Expiry Date' && value.isNotEmpty) {
+      try {
+        final parts = value.split('-');
+        if (parts.length == 3) {
+          final expiryDate = DateTime(
+            int.parse(parts[2]), // year
+            int.parse(parts[1]), // month
+            int.parse(parts[0]), // day
+          );
+          
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          displayValue = '${parts[0]} ${months[int.parse(parts[1]) - 1]} ${parts[2]}';
+          
+          final daysLeft = expiryDate.difference(DateTime(2025, 5, 17)).inDays;
+          if (daysLeft < 0) {
+            daysRemaining = 'Expired';
+            textColor = Colors.red;
+          } else {
+            daysRemaining = '$daysLeft days remaining';
+            if (daysLeft < 30) {
+              textColor = Colors.orange;
+            }
+          }
+        }
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -837,11 +874,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               Text(
-                value,
-                style: const TextStyle(
+                displayValue,
+                style: TextStyle(
                   fontSize: 14,
+                  color: textColor,
+                  fontWeight: title == 'Expiry Date' ? FontWeight.w500 : null,
                 ),
               ),
+              if (daysRemaining.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  daysRemaining,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
