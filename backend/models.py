@@ -25,3 +25,4 @@ class Prescriptions(db.Model):
     med_id = db.Column(db.String, nullable=False)
     user_id = db.Column(db.String, nullable=False)
     frequency = db.Column(db.Integer, nullable=False)
+    expiry_date = db.Column(db.String, nullable=False)

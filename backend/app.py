@@ -341,7 +341,8 @@ def getUserData():
                 "medicine_name": m.med_name,
                 "recommended_dosage": m.recommended_dosage,
                 "side_effects": m.side_effects,
-                "frequency": p.frequency
+                "frequency": p.frequency,
+                "expiry_date": datetime.strptime(p.expiry_date, "%Y-%m-%d %H:%M:%S").strftime("%A, %d %B %Y")
             } for p, m in zip(fetchPrescriptions, fetchMedicines)],
         }, 200
     else:

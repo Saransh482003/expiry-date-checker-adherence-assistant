@@ -15,9 +15,9 @@ for i in range(len(books)):
     # """, (row['user_id'], row['user_name'], row['password'], row['email'], f"{row['ph_no']}", datetime.strptime(row['last_loged'],'%d-%m-%Y'), row['gender'], datetime.strptime(row['dob'],'%d-%m-%Y')))
 
     cursor.execute(f"""
-        INSERT INTO prescriptions (pres_id, med_id, user_id, frequency) 
-        VALUES (?, ?, ?, ?)
-    """, (row['pres_id'], row['med_id'], row['user_id'], int(row['frequency'])))
+        INSERT INTO prescriptions (pres_id, med_id, user_id, frequency, expiry_date) 
+        VALUES (?, ?, ?, ?, ?)
+    """, (row['pres_id'], row['med_id'], row['user_id'], int(row['frequency']), row['expiry_date']))
 
     # cursor.execute(f"""
     #     INSERT INTO medicines (med_id, med_name, recommended_dosage, side_effects) 
