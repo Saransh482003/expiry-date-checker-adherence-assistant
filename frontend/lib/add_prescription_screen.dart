@@ -8,6 +8,7 @@ import 'package:lottie/lottie.dart';
 import 'theme_constants.dart';
 import 'constants.dart';
 import 'package:record/record.dart';
+import 'expiry-date-check.dart';
 
 class AddPrescriptionScreen extends StatefulWidget {
   final String username;
@@ -468,8 +469,18 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         icon: Icons.calendar_today,
                         suffix: IconButton(
                           icon: const Icon(Icons.document_scanner),
-                          onPressed: () {
-                            // Add expiry date scanning functionality here
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ExpiryDateCheck(),
+                              ),
+                            );
+                            if (result != null) {
+                              setState(() {
+                                _expiryDateController.text = result;
+                              });
+                            }
                           },
                         ),
                       ),
