@@ -435,6 +435,17 @@ def addPrescription():
                     return "Failed to add prescription", 500
     return "Unexpected Error", 500
 
+@app.route("/delete-prescriptions", methods=["DELETE"])
+def deletePrescriptions():
+    form = request.get_json()
+    fetchPres = Prescriptions.query.filter_by(pres_id=form["pres_id"], user_id=form["user_id"]).first()
+    if fetchPres:
+        db.session.delete(fetchPres)
+        db.session.commit()
+        return "Successfully Deleted", 200
+    else:
+        return "Prescription not found", 404
+
 def find_all_matches(user_input, medicines, top_n=5):
     matches = process.extract(user_input, medicines, scorer=fuzz.WRatio, limit=None)
     sorted_matches = sorted(matches, key=lambda x: x[1], reverse=True)

@@ -1062,7 +1062,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           final daysLeft = expiryDate.difference(DateTime.now()).inDays;
           if (daysLeft < 0) {
-            daysRemaining = 'Expired';
+            daysRemaining = 'EXPIRED';
             textColor = Colors.red;
           } else {
             daysRemaining = '$daysLeft days remaining';
