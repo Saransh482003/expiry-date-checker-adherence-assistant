@@ -32,6 +32,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+
+    // Add navigation listener to refresh data when screen is focused
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigator = Navigator.of(context);
+      navigator.push(PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      )).then((_) => _fetchUserData());
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _fetchUserData();
   }
 
   @override
@@ -378,38 +394,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // if (userData?['prescriptions'] != null) {
-                        //   (userData!['prescriptions'] as List).sort((a, b) {
-                        //     try {
-                        //       final aDate = _parseExpiryDate(a['expiry_date']);
-                        //       final bDate = _parseExpiryDate(b['expiry_date']);
-                        //       return aDate.compareTo(bDate);
-                        //     } catch (e) {
-                        //       return 0;
-                        //     }
-                        //   })
-                        //         .map(
-                        //           (prescription) => _buildPrescriptionCard(
-                        //             medicineName: prescription['medicine_name'],
-                        //             presId: prescription['pres_id'],
-                        //             recommendedDosage:
-                        //                 prescription['recommended_dosage'],
-                        //             sideEffects: prescription['side_effects'],
-                        //             frequency: prescription['frequency'],
-                        //             expiryDate: prescription['expiry_date'],
-                        //           ),
-                        //         )
-                        //         .toList()
-                        // } else
-                        //   const Center(
-                        //     child: Text(
-                        //       'No prescriptions found',
-                        //       style: TextStyle(
-                        //         fontSize: 16,
-                        //         color: Colors.grey,
-                        //       ),
-                        //     ),
-                        //   ),
+                        if (userData?['prescriptions'] != null &&
+                            (userData!['prescriptions'] as List).isNotEmpty)
+                          ...((userData!['prescriptions'] as List).map(
+                            (prescription) => _buildPrescriptionCard(
+                              medicineName: prescription['medicine_name'],
+                              presId: prescription['pres_id'],
+                              recommendedDosage: prescription['recommended_dosage'],
+                              sideEffects: prescription['side_effects'],
+                              frequency: prescription['frequency'],
+                              expiryDate: prescription['expiry_date'],
+                            ),
+                          ).toList())
+                        else
+                          const Center(
+                            child: Text(
+                              'No prescriptions found',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   )

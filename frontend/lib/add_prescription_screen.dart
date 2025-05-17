@@ -48,7 +48,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     if (_medicineNameController.text.isEmpty ||
         _dosageController.text.isEmpty ||
         _sideEffectsController.text.isEmpty ||
-        _frequencyController.text.isEmpty) {
+        _frequencyController.text.isEmpty ||
+        _expiryDateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -478,7 +479,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                             );
                             if (result != null) {
                               setState(() {
-                                _expiryDateController.text = result;
+                                _expiryDateController.text = result + " 00:00:00"; // Append time to match expected format
                               });
                             }
                           },
