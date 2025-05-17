@@ -33,21 +33,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _fetchUserData();
 
-    // Add navigation listener to refresh data when screen is focused
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final navigator = Navigator.of(context);
-      navigator.push(PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const SizedBox(),
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-      )).then((_) => _fetchUserData());
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _fetchUserData();
   }
 
   @override
@@ -60,46 +45,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchUserData() async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/get-user-data'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': widget.username,
-          'password': widget.password,
-        }),
-      );
+  if (!mounted) return;
+  
+  setState(() => isLoading = true);
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/get-user-data'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': widget.username,
+        'password': widget.password,
+      }),
+    );
 
-      if (response.statusCode == 200) {
-        setState(() {
-          userData = jsonDecode(response.body);
-          isLoading = false;
-        });
-        print(userData);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load user data: ${response.body}')),
-        );
-        setState(() => isLoading = false);
-      }
-    } catch (e) {
+    if (!mounted) return;
+
+    if (response.statusCode == 200) {
+      setState(() {
+        userData = jsonDecode(response.body);
+        isLoading = false;
+      });
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading user data: $e')),
+        SnackBar(content: Text('Failed to load data: ${response.statusCode}')),
       );
-      setState(() => isLoading = false);
     }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
 
-  DateTime _parseExpiryDate(String date) {
-    try {
-      final parts = date.split(' ');
-      if (parts.length == 3) {
-        const months = {
-          'Jan': 1,
-          'Feb': 2,
-          'Mar': 3,
-          'Apr': 4,
-          'May': 5,
+DateTime _parseExpiryDate(String date) {
+  try {
+    final parts = date.split(' ');
+    if (parts.length == 3) {
+      const months = {
+        'Jan': 1,
+        'Feb': 2,
+        'Mar': 3,
+        'Apr': 4,
+        'May': 5,
           'Jun': 6,
           'Jul': 7,
           'Aug': 8,
@@ -498,8 +489,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String sideEffects,
     required int frequency,
     required String expiryDate,
-  }) {
-    // Check if medicine is expired
+  }) {    // Check if medicine is expired
     bool isExpired = false;
     try {
       final parts = expiryDate.split(' ');
@@ -523,7 +513,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           months[parts[1]] ?? 1, // month
           int.parse(parts[0]), // day
         );
-        isExpired = expiryDateTime.isBefore(DateTime(2025, 5, 17));
+        final today = DateTime.now();
+        isExpired = expiryDateTime.isBefore(DateTime(today.year, today.month, today.day));
       }
     } catch (e) {
       print('Error parsing date: $e');
@@ -632,8 +623,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onPressed: () async {
                   if (isExpired) {
                     try {
-                      final response = await http.post(
-                        Uri.parse('$baseUrl/delete-prescription'),
+                      final response = await http.delete(
+                        Uri.parse('$baseUrl/delete-prescriptions'),
                         headers: {'Content-Type': 'application/json'},
                         body: jsonEncode({
                           'user_id': userData?['user_id'],
@@ -642,30 +633,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
 
                       if (response.statusCode == 200) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Prescription deleted successfully'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        // Refresh the prescriptions list
-                        _fetchUserData();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Prescription deleted successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          // Refresh the prescriptions list
+                          _fetchUserData();
+                        }
                       } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to delete prescription: ${response.body}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                                'Failed to delete prescription: ${response.body}'),
+                            content: Text('Error deleting prescription: $e'),
                             backgroundColor: Colors.red,
                           ),
                         );
                       }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error deleting prescription: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
                     }
                     return;
                   }
@@ -1005,8 +1001,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  backgroundColor:
-                      isExpired ? Colors.red : ThemeConstants.primaryColor,
+                  backgroundColor: isExpired ? Colors.red : ThemeConstants.primaryColor,
                 ),
                 child: Text(
                   isExpired ? 'Delete Prescription' : 'Set Reminder',
