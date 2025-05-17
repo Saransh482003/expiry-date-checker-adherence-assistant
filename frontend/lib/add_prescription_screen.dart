@@ -30,6 +30,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
   final TextEditingController _dosageController = TextEditingController();
   final TextEditingController _sideEffectsController = TextEditingController();
   final TextEditingController _frequencyController = TextEditingController();
+  final TextEditingController _expiryDateController = TextEditingController();
   final AudioRecorder audioRecorder = AudioRecorder();
 
   @override
@@ -38,6 +39,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     _dosageController.dispose();
     _sideEffectsController.dispose();
     _frequencyController.dispose();
+    _expiryDateController.dispose();
     super.dispose();
   }
 
@@ -55,7 +57,8 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/add-prescription'),
-        headers: {'Content-Type': 'application/json'},        body: jsonEncode({
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
           'username': widget.username,
           'password': widget.password,
           'user_id': widget.userId,
@@ -63,6 +66,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
           'recommended_dosage': _dosageController.text,
           'side_effects': _sideEffectsController.text,
           'frequency': int.parse(_frequencyController.text),
+          'expiry_date': _expiryDateController.text,
         }),
       );
 
@@ -457,7 +461,18 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                         icon: Icons.repeat,
                         keyboardType: TextInputType.number,
                       ),
-                      
+                      const SizedBox(height: 16),
+                      _buildInputField(
+                        controller: _expiryDateController,
+                        label: 'Expiry Date',
+                        icon: Icons.calendar_today,
+                        suffix: IconButton(
+                          icon: const Icon(Icons.document_scanner),
+                          onPressed: () {
+                            // Add expiry date scanning functionality here
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 32),
                       ElevatedButton(
                         onPressed: () {
@@ -499,6 +514,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    Widget? suffix,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -519,6 +535,7 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: ThemeConstants.primaryColor),
+          suffixIcon: suffix,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey[300]!),

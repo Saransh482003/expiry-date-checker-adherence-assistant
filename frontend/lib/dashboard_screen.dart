@@ -10,7 +10,7 @@ import 'add_prescription_screen.dart';
 class DashboardScreen extends StatefulWidget {
   final String username;
   final String password;
-  
+
   const DashboardScreen({
     Key? key,
     required this.username,
@@ -43,8 +43,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
-
-
   Future<void> _fetchUserData() async {
     try {
       final response = await http.post(
@@ -76,18 +74,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  DateTime _parseExpiryDate(String date) {
+    try {
+      final parts = date.split(' ');
+      if (parts.length == 3) {
+        const months = {
+          'Jan': 1,
+          'Feb': 2,
+          'Mar': 3,
+          'Apr': 4,
+          'May': 5,
+          'Jun': 6,
+          'Jul': 7,
+          'Aug': 8,
+          'Sep': 9,
+          'Oct': 10,
+          'Nov': 11,
+          'Dec': 12
+        };
+        return DateTime(
+          int.parse(parts[2]), // year
+          months[parts[1]] ?? 1, // month
+          int.parse(parts[0]), // day
+        );
+      }
+    } catch (e) {
+      print('Error parsing date: $e');
+    }
+    return DateTime(1900); // Default date for invalid formats
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Sort prescriptions by expiry date
+    if (userData?['prescriptions'] != null) {
+      (userData!['prescriptions'] as List).sort((a, b) {
+        try {
+          final aDate = _parseExpiryDate(a['expiry_date']);
+          final bDate = _parseExpiryDate(b['expiry_date']);
+          return aDate.compareTo(bDate);
+        } catch (e) {
+          print('Error during sorting: $e');
+          return 0;
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Patient Dashboard',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),        backgroundColor: ThemeConstants.primaryColor,
+        ),
+        backgroundColor: ThemeConstants.primaryColor,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.document_scanner_outlined, color: Colors.white),
+            icon: const Icon(Icons.document_scanner_outlined,
+                color: Colors.white),
             onPressed: () {
               Navigator.pushNamed(context, '/expiry-check');
             },
@@ -105,7 +149,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
         ],
-      ),      body: isLoading
+      ),
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Column(
@@ -169,7 +214,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   height: 120,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 4),
+                                    border: Border.all(
+                                        color: Colors.white, width: 4),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.1),
@@ -190,7 +236,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 // Edit button
                                 Positioned(
                                   bottom: 0,
-                                  right: MediaQuery.of(context).size.width * 0.28,
+                                  right:
+                                      MediaQuery.of(context).size.width * 0.28,
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
@@ -213,7 +260,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(height: 20),
                             // User info with icons
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
                               child: Column(
                                 children: [
                                   Text(
@@ -262,7 +310,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ],
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
                                       children: [
                                         _buildQuickStat(
                                           'Prescriptions',
@@ -329,46 +378,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (userData?['prescriptions'] != null)
-                          ...List<Widget>.from(
-                            (userData!['prescriptions'] as List).map(                              (prescription) => _buildPrescriptionCard(
-                                medicineName: prescription['medicine_name'],
-                                presId: prescription['pres_id'],
-                                recommendedDosage: prescription['recommended_dosage'],
-                                sideEffects: prescription['side_effects'],
-                                frequency: prescription['frequency'],
-                                expiryDate: prescription['expiry_date'],
-                              ),
-                            ),
-                          )
-                        else
-                          const Center(
-                            child: Text(
-                              'No prescriptions found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
+                        // if (userData?['prescriptions'] != null) {
+                        //   (userData!['prescriptions'] as List).sort((a, b) {
+                        //     try {
+                        //       final aDate = _parseExpiryDate(a['expiry_date']);
+                        //       final bDate = _parseExpiryDate(b['expiry_date']);
+                        //       return aDate.compareTo(bDate);
+                        //     } catch (e) {
+                        //       return 0;
+                        //     }
+                        //   })
+                        //         .map(
+                        //           (prescription) => _buildPrescriptionCard(
+                        //             medicineName: prescription['medicine_name'],
+                        //             presId: prescription['pres_id'],
+                        //             recommendedDosage:
+                        //                 prescription['recommended_dosage'],
+                        //             sideEffects: prescription['side_effects'],
+                        //             frequency: prescription['frequency'],
+                        //             expiryDate: prescription['expiry_date'],
+                        //           ),
+                        //         )
+                        //         .toList()
+                        // } else
+                        //   const Center(
+                        //     child: Text(
+                        //       'No prescriptions found',
+                        //       style: TextStyle(
+                        //         fontSize: 16,
+                        //         color: Colors.grey,
+                        //       ),
+                        //     ),
+                        //   ),
                       ],
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddPrescriptionScreen(
-                      username: widget.username,
-                      password: widget.password,
-                      userId: userData?['user_id'] ?? '',
-                    ),
-                  ),
-                );
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddPrescriptionScreen(
+                username: widget.username,
+                password: widget.password,
+                userId: userData?['user_id'] ?? '',
+              ),
+            ),
+          );
           if (result == true) {
             _fetchUserData(); // Refresh the prescriptions list
           }
@@ -424,7 +483,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-  }  Widget _buildPrescriptionCard({
+  }
+
+  Widget _buildPrescriptionCard({
     required String medicineName,
     required String presId,
     required String recommendedDosage,
@@ -437,25 +498,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final parts = expiryDate.split(' ');
       if (parts.length == 3) {
-        const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 
-                       'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
+        const months = {
+          'Jan': 1,
+          'Feb': 2,
+          'Mar': 3,
+          'Apr': 4,
+          'May': 5,
+          'Jun': 6,
+          'Jul': 7,
+          'Aug': 8,
+          'Sep': 9,
+          'Oct': 10,
+          'Nov': 11,
+          'Dec': 12
+        };
         final expiryDateTime = DateTime(
-          int.parse(parts[2]),  // year
-          months[parts[1]] ?? 1,  // month
-          int.parse(parts[0]),  // day
+          int.parse(parts[2]), // year
+          months[parts[1]] ?? 1, // month
+          int.parse(parts[0]), // day
         );
         isExpired = expiryDateTime.isBefore(DateTime(2025, 5, 17));
       }
     } catch (e) {
       print('Error parsing date: $e');
     }
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,              color: isExpired ? Colors.red[50] : Colors.white,
+      elevation: 2,
+      color: isExpired ? Colors.red[50] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isExpired ? BorderSide(color: Colors.red.shade200, width: 1) : BorderSide.none,
+        side: isExpired
+            ? BorderSide(color: Colors.red, width: 2)
+            : BorderSide.none,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -463,9 +538,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [                Container(
+              children: [
+                Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(                  color: isExpired ? Colors.red.withOpacity(0.1) : ThemeConstants.primaryColor.withOpacity(0.1),
+                  decoration: BoxDecoration(
+                    color: isExpired
+                        ? Colors.red.withOpacity(0.1)
+                        : ThemeConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -478,31 +557,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [                      Text(                        medicineName,                        style: TextStyle(
+                    children: [
+                      Text(
+                        medicineName,
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: isExpired ? Colors.red : Colors.black,
+                          decoration: isExpired
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
                         ),
                       ),
                       Text(
                         'ID: $presId',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isExpired ? Colors.red.withOpacity(0.7) : Colors.grey[600],
+                          color: isExpired
+                              ? Colors.red.withOpacity(0.7)
+                              : Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                ),                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isExpired ? Colors.red.withOpacity(0.1) : ThemeConstants.primaryColor.withOpacity(0.1),
+                    color: isExpired
+                        ? Colors.red.withOpacity(0.1)
+                        : ThemeConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$frequency times/day',
                     style: TextStyle(
-                      color: isExpired ? Colors.red : ThemeConstants.primaryColor,
+                      color:
+                          isExpired ? Colors.red : ThemeConstants.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -515,7 +607,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Dosage',
               value: recommendedDosage,
             ),
-            const SizedBox(height: 8),            _buildPrescriptionDetail(
+            const SizedBox(height: 8),
+            _buildPrescriptionDetail(
               icon: Icons.warning_amber_rounded,
               title: 'Side Effects',
               value: sideEffects,
@@ -526,15 +619,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Expiry Date',
               value: expiryDate,
             ),
-            const SizedBox(height: 16),            // Action Button
+            const SizedBox(height: 16), // Action Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(                onPressed: () async {
+              child: ElevatedButton(
+                onPressed: () async {
                   if (isExpired) {
-                    try {                      final response = await http.delete(
+                    try {
+                      final response = await http.post(
                         Uri.parse('$baseUrl/delete-prescription'),
                         headers: {'Content-Type': 'application/json'},
                         body: jsonEncode({
+                          'user_id': userData?['user_id'],
                           'pres_id': presId,
                         }),
                       );
@@ -551,7 +647,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Failed to delete prescription: ${response.body}'),
+                            content: Text(
+                                'Failed to delete prescription: ${response.body}'),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -566,263 +663,317 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     }
                     return;
                   }
-                  
+
                   TimeOfDay? selectedTime = await showDialog<TimeOfDay>(
-  context: context,
-  builder: (BuildContext context) {
-    int selectedHour = 14;  // Default to 2
-    bool isPM = true;      // Default to PM
-    int selectedMinute = 0;
-    
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Set Reminder Time',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: ThemeConstants.primaryColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Container(                    decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ThemeConstants.primaryColor.withOpacity(0.05),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Hour',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 150,
-                            width: 80,
-                            child: ListWheelScrollView.useDelegate(
-                              itemExtent: 50,
-                              perspective: 0.005,
-                              diameterRatio: 1.2,
-                              physics: const FixedExtentScrollPhysics(),
-                              useMagnifier: true,
-                              magnification: 1.3,
-                              onSelectedItemChanged: (index) {
-                                setState(() {
-                                  selectedHour = index + 1;
-                                });
-                              },
-                              childDelegate: ListWheelChildBuilderDelegate(
-                                childCount: 12,
-                                builder: (context, index) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: selectedHour == index + 1 
-                                          ? ThemeConstants.primaryColor.withOpacity(0.1)
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 16,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${index + 1}'.padLeft(2, '0'),
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: selectedHour == index + 1 
-                                              ? FontWeight.bold 
-                                              : FontWeight.normal,
-                                          color: selectedHour == index + 1
-                                              ? ThemeConstants.primaryColor
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        height: 100,
-                        width: 1,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Minute',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 150,
-                            width: 80,
-                            child: ListWheelScrollView.useDelegate(
-                              itemExtent: 50,
-                              perspective: 0.005,
-                              diameterRatio: 1.2,
-                              physics: const FixedExtentScrollPhysics(),
-                              useMagnifier: true,
-                              magnification: 1.3,
-                              onSelectedItemChanged: (index) {
-                                setState(() {
-                                  selectedMinute = index * 5;
-                                });
-                              },
-                              childDelegate: ListWheelChildBuilderDelegate(
-                                childCount: 12,
-                                builder: (context, index) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: selectedMinute == index * 5 
-                                          ? ThemeConstants.primaryColor.withOpacity(0.1)
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 16,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${index * 5}'.padLeft(2, '0'),
-                                        style: TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: selectedMinute == index * 5 
-                                              ? FontWeight.bold 
-                                              : FontWeight.normal,
-                                          color: selectedMinute == index * 5
-                                              ? ThemeConstants.primaryColor
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildPeriodButton(
-                        label: 'AM',
-                        isSelected: !isPM,
-                        onTap: () => setState(() => isPM = false),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildPeriodButton(
-                        label: 'PM',
-                        isSelected: isPM,
-                        onTap: () => setState(() => isPM = true),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        final hour = isPM ? 
-                          (selectedHour == 12 ? 12 : selectedHour + 12) : 
-                          (selectedHour == 12 ? 0 : selectedHour);
-                        Navigator.pop(
-                          context,
-                          TimeOfDay(hour: hour, minute: selectedMinute),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ThemeConstants.primaryColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                    context: context,
+                    builder: (BuildContext context) {
+                      int selectedHour = 14; // Default to 2
+                      bool isPM = true; // Default to PM
+                      int selectedMinute = 0;
+
+                      return Dialog(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ),
-                      child: const Text(
-                        'Set Time',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: StatefulBuilder(
+                            builder: (context, setState) {
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'Set Reminder Time',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: ThemeConstants.primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: ThemeConstants.primaryColor
+                                              .withOpacity(0.05),
+                                          blurRadius: 10,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Hour',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                              height: 150,
+                                              width: 80,
+                                              child: ListWheelScrollView
+                                                  .useDelegate(
+                                                itemExtent: 50,
+                                                perspective: 0.005,
+                                                diameterRatio: 1.2,
+                                                physics:
+                                                    const FixedExtentScrollPhysics(),
+                                                useMagnifier: true,
+                                                magnification: 1.3,
+                                                onSelectedItemChanged: (index) {
+                                                  setState(() {
+                                                    selectedHour = index + 1;
+                                                  });
+                                                },
+                                                childDelegate:
+                                                    ListWheelChildBuilderDelegate(
+                                                  childCount: 12,
+                                                  builder: (context, index) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        color: selectedHour ==
+                                                                index + 1
+                                                            ? ThemeConstants
+                                                                .primaryColor
+                                                                .withOpacity(
+                                                                    0.1)
+                                                            : Colors
+                                                                .transparent,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        vertical: 8,
+                                                        horizontal: 16,
+                                                      ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          '${index + 1}'
+                                                              .padLeft(2, '0'),
+                                                          style: TextStyle(
+                                                            fontSize: 24,
+                                                            fontWeight:
+                                                                selectedHour ==
+                                                                        index +
+                                                                            1
+                                                                    ? FontWeight
+                                                                        .bold
+                                                                    : FontWeight
+                                                                        .normal,
+                                                            color: selectedHour ==
+                                                                    index + 1
+                                                                ? ThemeConstants
+                                                                    .primaryColor
+                                                                : Colors
+                                                                    .black87,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          height: 100,
+                                          width: 1,
+                                          color: Colors.grey[300],
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Minute',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            SizedBox(
+                                              height: 150,
+                                              width: 80,
+                                              child: ListWheelScrollView
+                                                  .useDelegate(
+                                                itemExtent: 50,
+                                                perspective: 0.005,
+                                                diameterRatio: 1.2,
+                                                physics:
+                                                    const FixedExtentScrollPhysics(),
+                                                useMagnifier: true,
+                                                magnification: 1.3,
+                                                onSelectedItemChanged: (index) {
+                                                  setState(() {
+                                                    selectedMinute = index * 5;
+                                                  });
+                                                },
+                                                childDelegate:
+                                                    ListWheelChildBuilderDelegate(
+                                                  childCount: 12,
+                                                  builder: (context, index) {
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        color: selectedMinute ==
+                                                                index * 5
+                                                            ? ThemeConstants
+                                                                .primaryColor
+                                                                .withOpacity(
+                                                                    0.1)
+                                                            : Colors
+                                                                .transparent,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(12),
+                                                      ),
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        vertical: 8,
+                                                        horizontal: 16,
+                                                      ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          '${index * 5}'
+                                                              .padLeft(2, '0'),
+                                                          style: TextStyle(
+                                                            fontSize: 24,
+                                                            fontWeight:
+                                                                selectedMinute ==
+                                                                        index *
+                                                                            5
+                                                                    ? FontWeight
+                                                                        .bold
+                                                                    : FontWeight
+                                                                        .normal,
+                                                            color: selectedMinute ==
+                                                                    index * 5
+                                                                ? ThemeConstants
+                                                                    .primaryColor
+                                                                : Colors
+                                                                    .black87,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.all(4),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildPeriodButton(
+                                          label: 'AM',
+                                          isSelected: !isPM,
+                                          onTap: () =>
+                                              setState(() => isPM = false),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildPeriodButton(
+                                          label: 'PM',
+                                          isSelected: isPM,
+                                          onTap: () =>
+                                              setState(() => isPM = true),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          final hour = isPM
+                                              ? (selectedHour == 12
+                                                  ? 12
+                                                  : selectedHour + 12)
+                                              : (selectedHour == 12
+                                                  ? 0
+                                                  : selectedHour);
+                                          Navigator.pop(
+                                            context,
+                                            TimeOfDay(
+                                                hour: hour,
+                                                minute: selectedMinute),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              ThemeConstants.primaryColor,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Set Time',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  },
-);
+                      );
+                    },
+                  );
 
                   if (selectedTime != null && mounted) {
                     await NotiService().scheduleNotification(
@@ -832,7 +983,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       hour: selectedTime.hour,
                       minute: selectedTime.minute,
                     );
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -848,7 +999,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  backgroundColor: isExpired ? Colors.red : ThemeConstants.primaryColor,
+                  backgroundColor:
+                      isExpired ? Colors.red : ThemeConstants.primaryColor,
                 ),
                 child: Text(
                   isExpired ? 'Delete Prescription' : 'Set Reminder',
@@ -865,6 +1017,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
   Widget _buildPrescriptionDetail({
     required IconData icon,
     required String title,
@@ -883,11 +1036,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             int.parse(parts[1]), // month
             int.parse(parts[0]), // day
           );
-          
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          displayValue = '${parts[0]} ${months[int.parse(parts[1]) - 1]} ${parts[2]}';
-          
-          final daysLeft = expiryDate.difference(DateTime(2025, 5, 17)).inDays;
+
+          const months = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec'
+          ];
+          displayValue =
+              '${parts[0]} ${months[int.parse(parts[1]) - 1]} ${parts[2]}';
+
+          final daysLeft = expiryDate.difference(DateTime.now()).inDays;
           if (daysLeft < 0) {
             daysRemaining = 'Expired';
             textColor = Colors.red;
@@ -899,54 +1066,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
         }
       } catch (e) {
-        print('Error parsing date: $e');
+        debugPrint('Error parsing date: $e');
       }
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: Colors.grey[600],
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                displayValue,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: textColor,
-                  fontWeight: title == 'Expiry Date' ? FontWeight.w500 : null,
-                ),
-              ),
-              if (daysRemaining.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  daysRemaining,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ],
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(
+        icon,
+        size: 16,
+        color: Colors.grey[600],
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
           ),
         ),
-      ],
-    );
+        Text(
+          displayValue,
+          style: TextStyle(
+            fontSize: 14,
+            color: textColor,
+            fontWeight: title == 'Expiry Date' ? FontWeight.w500 : null,
+          ),
+        ),
+        if (daysRemaining.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            daysRemaining,
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ]
+      ]))
+    ]);
   }
 
   Widget _buildQuickStat(String label, String value, IconData icon) {
@@ -1006,5 +1167,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
 }
