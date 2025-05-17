@@ -397,15 +397,15 @@ class _AddPrescriptionScreenState extends State<AddPrescriptionScreen> {
                             scrollDirection: Axis.horizontal,
                             children: [
                               OutlinedButton(
-                                onPressed: () {},  // Keep current name
-                                child: const Text('None'),
+                                onPressed: () {},
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: ThemeConstants.primaryColor,
                                   side: const BorderSide(color: ThemeConstants.primaryColor),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),
-                                ),
+                                ),  // Keep current name
+                                child: const Text('None'),
                               ),
                               const SizedBox(width: 8),
                               ...similarMatches.map((name) =>

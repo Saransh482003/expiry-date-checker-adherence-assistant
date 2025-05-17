@@ -424,8 +424,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-  }
-  Widget _buildPrescriptionCard({
+  }  Widget _buildPrescriptionCard({
     required String medicineName,
     required String presId,
     required String recommendedDosage,
@@ -433,11 +432,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required int frequency,
     required String expiryDate,
   }) {
+    // Check if medicine is expired
+    bool isExpired = false;
+    try {
+      final parts = expiryDate.split(' ');
+      if (parts.length == 3) {
+        const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 
+                       'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
+        final expiryDateTime = DateTime(
+          int.parse(parts[2]),  // year
+          months[parts[1]] ?? 1,  // month
+          int.parse(parts[0]),  // day
+        );
+        isExpired = expiryDateTime.isBefore(DateTime(2025, 5, 17));
+      }
+    } catch (e) {
+      print('Error parsing date: $e');
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
+      elevation: 2,              color: isExpired ? Colors.red[50] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: isExpired ? BorderSide(color: Colors.red.shade200, width: 1) : BorderSide.none,
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -445,16 +463,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                Container(
+              children: [                Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: ThemeConstants.primaryColor.withOpacity(0.1),
+                  decoration: BoxDecoration(                  color: isExpired ? Colors.red.withOpacity(0.1) : ThemeConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.medication,
-                    color: ThemeConstants.primaryColor,
+                    color: isExpired ? Colors.red : ThemeConstants.primaryColor,
                     size: 24,
                   ),
                 ),
@@ -462,34 +478,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        medicineName,
-                        style: const TextStyle(
+                    children: [                      Text(                        medicineName,                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: isExpired ? Colors.red : Colors.black,
                         ),
                       ),
                       Text(
                         'ID: $presId',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: isExpired ? Colors.red.withOpacity(0.7) : Colors.grey[600],
                         ),
                       ),
                     ],
                   ),
-                ),
-                Container(
+                ),                Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: ThemeConstants.primaryColor.withOpacity(0.1),
+                    color: isExpired ? Colors.red.withOpacity(0.1) : ThemeConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$frequency times/day',
-                    style: const TextStyle(
-                      color: ThemeConstants.primaryColor,
+                    style: TextStyle(
+                      color: isExpired ? Colors.red : ThemeConstants.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -513,11 +526,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title: 'Expiry Date',
               value: expiryDate,
             ),
-            const SizedBox(height: 16),
-            // New Button
+            const SizedBox(height: 16),            // Action Button
             SizedBox(
-              width: double.infinity,              child: ElevatedButton(
-                onPressed: () async {                  TimeOfDay? selectedTime = await showDialog<TimeOfDay>(
+              width: double.infinity,
+              child: ElevatedButton(                onPressed: () async {
+                  if (isExpired) {
+                    try {                      final response = await http.delete(
+                        Uri.parse('$baseUrl/delete-prescription'),
+                        headers: {'Content-Type': 'application/json'},
+                        body: jsonEncode({
+                          'pres_id': presId,
+                        }),
+                      );
+
+                      if (response.statusCode == 200) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Prescription deleted successfully'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        // Refresh the prescriptions list
+                        _fetchUserData();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to delete prescription: ${response.body}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error deleting prescription: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                  
+                  TimeOfDay? selectedTime = await showDialog<TimeOfDay>(
   context: context,
   builder: (BuildContext context) {
     int selectedHour = 14;  // Default to 2
@@ -798,11 +848,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  backgroundColor: ThemeConstants.primaryColor,
+                  backgroundColor: isExpired ? Colors.red : ThemeConstants.primaryColor,
                 ),
-                child: const Text(
-                  'Set Reminder',
-                  style: TextStyle(
+                child: Text(
+                  isExpired ? 'Delete Prescription' : 'Set Reminder',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

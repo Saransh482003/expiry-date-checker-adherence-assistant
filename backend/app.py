@@ -35,6 +35,8 @@ import warnings
 import logging
 import os
 from rapidfuzz import process, fuzz
+
+
 warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('paddleocr').setLevel(logging.ERROR)

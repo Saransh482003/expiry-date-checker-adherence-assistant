@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
-import 'package:lottie/lottie.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'constants.dart';
@@ -429,7 +428,7 @@ class _ExpiryDateCheckState extends State<ExpiryDateCheck> {
                     // color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Align medicine strip within the box and tap to scan',
                     style: TextStyle(
                       color: Colors.white,
